@@ -1,1 +1,206 @@
+/* СБРОС СТИЛЕЙ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
+/* ОСНОВНЫЕ СТИЛИ */
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+/* КОНТЕЙНЕР */
+.container {
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+    padding: 40px 20px;
+}
+
+/* ЛОГОТИП */
+.logo-container {
+    margin-bottom: 30px;
+}
+
+.logo {
+    width: 150px;
+    height: 150px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+/* ЗАГОЛОВОК */
+.title {
+    font-size: 4rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.accent {
+    color: #ff6b6b;
+}
+
+.subtitle {
+    font-size: 1.4rem;
+    opacity: 0.9;
+    margin-bottom: 40px;
+}
+
+/* СЧЕТЧИК */
+.countdown {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    margin: 40px 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.countdown-title {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.countdown-timer {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.time-block {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 20px 15px;
+    border-radius: 15px;
+    min-width: 100px;
+    transition: all 0.3s ease;
+}
+
+.time-block:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-5px);
+}
+
+.time-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    display: block;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.time-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    display: block;
+    margin-top: 5px;
+}
+
+/* ОПИСАНИЕ */
+.description {
+    margin: 30px 0;
+    font-size: 1.1rem;
+}
+
+.description p {
+    margin: 10px 0;
+    opacity: 0.9;
+}
+
+/* СОЦСЕТИ */
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.social-link {
+    color: white;
+    text-decoration: none;
+    padding: 12px 25px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.social-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.telegram:hover { background: #0088cc; border-color: #0088cc; }
+.youtube:hover { background: #ff0000; border-color: #ff0000; }
+.vk:hover { background: #4c75a3; border-color: #4c75a3; }
+
+/* СТАТУС */
+.status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* АНИМАЦИЯ ПУЛЬСА */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* АДАПТИВНОСТЬ ДЛЯ ТЕЛЕФОНОВ */
+@media (max-width: 768px) {
+    .title {
+        font-size: 2.5rem;
+    }
+    
+    .countdown-timer {
+        gap: 10px;
+    }
+    
+    .time-block {
+        min-width: 70px;
+        padding: 15px 10px;
+    }
+    
+    .time-number {
+        font-size: 1.8rem;
+    }
+    
+    .social-links {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .social-link {
+        width: 200px;
+    }
+}
