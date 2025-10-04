@@ -1,6 +1,6 @@
 // Счетчик до запуска (1 февраля 2025)
 function updateCountdown() {
-    const targetDate = new Date('2025-02-01').getTime();
+    const targetDate = new Date('2025-11-04').getTime();
     const now = new Date().getTime();
     const difference = targetDate - now;
 
