@@ -1,8 +1,15 @@
-// Счетчик до запуска (1 февраля 2025)
+// Счетчик до запуска 4 ноября 2025 года
 function updateCountdown() {
-    const targetDate = new Date('2025-11-04').getTime();
+    const targetDate = new Date('2025-11-04').getTime(); // 4 ноября 2025
     const now = new Date().getTime();
     const difference = targetDate - now;
+
+    // Если время уже наступило
+    if (difference < 0) {
+        document.querySelector('.countdown-title').textContent = 'Мы запустились! 🎉';
+        document.querySelector('.countdown-timer').style.display = 'none';
+        return;
+    }
 
     // Расчет времени
     const days = Math.floor(difference / (1000 * 60 * 60 * 24));
@@ -15,24 +22,24 @@ function updateCountdown() {
     document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
     document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
     document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
-
-    // Если время вышло
-    if (difference < 0) {
-        document.querySelector('.countdown-title').textContent = 'Мы запустились!';
-        document.querySelector('.countdown-timer').style.display = 'none';
-    }
 }
 
-// Запускаем сразу и каждую секунду
-updateCountdown();
-setInterval(updateCountdown, 1000);
-
-// Добавляем анимацию при загрузке
+// Плавное появление страницы
 document.addEventListener('DOMContentLoaded', function() {
+    // Анимация появления
     document.querySelector('.container').style.opacity = '0';
     document.querySelector('.container').style.transition = 'opacity 1s ease';
     
     setTimeout(() => {
         document.querySelector('.container').style.opacity = '1';
     }, 100);
+
+    // Запускаем счетчик сразу и каждую секунду
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+});
+
+// Дополнительная проверка при загрузке
+window.addEventListener('load', function() {
+    console.log('Счетчик запущен! Дата цели: 4 ноября 2025 года');
 });
