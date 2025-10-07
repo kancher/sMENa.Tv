@@ -22,8 +22,10 @@ function updateCountdown() {
     document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
 }
 
-// Эффект частиц при движении курсора
+// Эффект частиц при движении курсора - ТОЛЬКО на десктопе
 function createParticles(e) {
+    if (window.innerWidth <= 768) return; // Не на мобильных
+    
     const particle = document.createElement('div');
     particle.classList.add('particle');
     
@@ -49,24 +51,31 @@ function createParticles(e) {
     }, 1500);
 }
 
-// Микро-анимации для элементов
-function setupMicroInteractions() {
-    // Анимация при наведении на счетчик
+// Простые взаимодействия для всех устройств
+function setupInteractions() {
+    // Анимация при тапе/клике на счетчик
     document.querySelectorAll('.time-unit').forEach(unit => {
-        unit.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-3px) scale(1.05)';
-        });
-        
-        unit.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(-2px) scale(1)';
+        unit.addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
         });
     });
     
     // Анимация заголовка при клике
     document.querySelector('.macos-title').addEventListener('click', function() {
+        this.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+            this.style.transform = '';
+        }, 150);
+    });
+    
+    // Лёгкая анимация логотипа при тапе
+    document.querySelector('.logo-glass').addEventListener('click', function() {
         this.style.transform = 'scale(0.95)';
         setTimeout(() => {
-            this.style.transform = 'scale(1)';
+            this.style.transform = '';
         }, 150);
     });
 }
@@ -78,26 +87,23 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateCountdown, 1000);
     
     // Настраиваем взаимодействия
-    setupMicroInteractions();
+    setupInteractions();
     
-    // Эффект частиц (только на десктопе)
+    // Эффект частиц только на десктопе
     if (window.innerWidth > 768) {
         document.addEventListener('mousemove', function(e) {
-            // Создаем частицы с вероятностью 20%
-            if (Math.random() < 0.2) {
+            // Создаем частицы с вероятностью 15%
+            if (Math.random() < 0.15) {
                 createParticles(e);
             }
         });
     }
     
-    console.log('🎯 Ultra Minimalist Theme loaded');
+    console.log('🎯 Adaptive Minimalist Theme loaded');
+    console.log('Device type:', window.innerWidth > 768 ? 'Desktop' : 'Mobile');
 });
 
 // Плавный скролл и запрет выделения
 document.addEventListener('selectstart', function(e) {
-    e.preventDefault();
-});
-
-document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
 });
