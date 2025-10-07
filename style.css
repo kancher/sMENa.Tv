@@ -51,13 +51,13 @@ body {
 }
 
 .logo-glass {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     margin: 0 auto;
     background: var(--macos-glass);
     backdrop-filter: blur(25px);
     border: 1px solid var(--macos-border);
-    border-radius: 14px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -68,20 +68,32 @@ body {
     cursor: pointer;
 }
 
-.logo-glass:hover {
-    transform: scale(1.1) rotate(5deg);
-    background: rgba(138, 99, 210, 0.1);
-    border-color: var(--macos-accent);
+/* Для десктопа - плавное увеличение */
+@media (hover: hover) and (pointer: fine) {
+    .logo-glass:hover {
+        transform: scale(1.08);
+        background: rgba(138, 99, 210, 0.1);
+        border-color: var(--macos-accent);
+    }
 }
 
-.logo-icon {
-    font-size: 20px;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
+/* Для тач-устройств - лёгкая анимация при тапе */
+.logo-glass:active {
+    transform: scale(0.98);
 }
 
-.logo-glass:hover .logo-icon {
-    opacity: 1;
+.logo-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+/* Для десктопа - логотип слегка "парит" при наведении */
+@media (hover: hover) and (pointer: fine) {
+    .logo-glass:hover .logo-image {
+        transform: scale(1.05);
+    }
 }
 
 /* Заголовок с "пляшущими" буквами */
@@ -128,9 +140,12 @@ body {
 .char-t { font-size: 95%; transform: translateY(0.5px); }
 .char-v { font-size: 100%; transform: translateY(0px); }
 
-.macos-title:hover span {
-    transform: translateY(-2px);
-    text-shadow: 0 5px 15px rgba(138, 99, 210, 0.3);
+/* Анимация заголовка только на десктопе */
+@media (hover: hover) and (pointer: fine) {
+    .macos-title:hover span {
+        transform: translateY(-2px);
+        text-shadow: 0 5px 15px rgba(138, 99, 210, 0.3);
+    }
 }
 
 .macos-subtitle {
@@ -189,14 +204,22 @@ body {
     transition: left 0.6s ease;
 }
 
-.time-unit:hover::before {
-    left: 100%;
+/* Эффекты счетчика только на десктопе */
+@media (hover: hover) and (pointer: fine) {
+    .time-unit:hover::before {
+        left: 100%;
+    }
+
+    .time-unit:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-2px);
+        border-color: var(--macos-accent);
+    }
 }
 
-.time-unit:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-2px);
-    border-color: var(--macos-accent);
+/* На мобильных - лёгкая обратная связь при тапе */
+.time-unit:active {
+    transform: scale(0.95);
 }
 
 .time-number {
@@ -261,30 +284,32 @@ body {
     }
 }
 
-/* Эффект частиц при движении курсора */
-.particle {
-    position: fixed;
-    width: 4px;
-    height: 4px;
-    background: var(--macos-accent);
-    border-radius: 50%;
-    pointer-events: none;
-    opacity: 0;
-    animation: float 1.5s ease-out forwards;
-}
-
-@keyframes float {
-    0% {
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
+/* Эффект частиц при движении курсора - ТОЛЬКО на десктопе */
+@media (hover: hover) and (pointer: fine) {
+    .particle {
+        position: fixed;
+        width: 4px;
+        height: 4px;
+        background: var(--macos-accent);
+        border-radius: 50%;
+        pointer-events: none;
         opacity: 0;
-        transform: translate(var(--tx), var(--ty)) scale(0);
+        animation: float 1.5s ease-out forwards;
+    }
+
+    @keyframes float {
+        0% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(var(--tx), var(--ty)) scale(0);
+        }
     }
 }
 
-/* Адаптивность */
+/* Адаптивность для мобильных */
 @media (max-width: 768px) {
     .macos-container {
         padding: 20px 0;
@@ -310,12 +335,18 @@ body {
     }
     
     .logo-glass {
-        width: 50px;
-        height: 50px;
+        width: 70px;
+        height: 70px;
     }
     
-    .logo-icon {
-        font-size: 16px;
+    .logo-image {
+        width: 45px;
+        height: 45px;
+    }
+    
+    /* На мобильных убираем сложные анимации */
+    .macos-title span {
+        transition: none;
     }
 }
 
@@ -337,4 +368,25 @@ body {
         font-size: 0.65rem;
         letter-spacing: 2px;
     }
+    
+    .logo-glass {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .logo-image {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Простые анимации для всех устройств */
+@keyframes gentleBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Лёгкая анимация для мобильных - при загрузке */
+.macos-logo {
+    animation: gentleBounce 2s ease-in-out 0.5s;
 }
