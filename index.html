@@ -3,108 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>✨ sMeNa.Tv - это ТЫ</title>
-
-    <!-- FAVICON -->
-    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
-    <link rel="icon" type="image/png" href="images/favicon.png">
-    <link rel="apple-touch-icon" href="images/favicon.png">
-    
-    <!-- Мета-теги -->
-    <meta name="description" content="sMeNa.Tv - стриминговая платформа нового поколения. Прямые трансляции, живой чат, интерактив">
-    <meta name="theme-color" content="#0a0a0a">
-    
+    <title>sMeNa.Tv</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Фон с градиентом и частицами -->
-    <div class="bg-gradient"></div>
-    <div class="particles" id="particles"></div>
-
-    <div class="container">
-        <!-- Логотип с эффектом стекла -->
-        <div class="logo-glass">
-            <img src="images/logo.png" alt="sMeNa.Tv Logo" class="logo-shine">
-            <div class="glass-reflection"></div>
+    <div class="macos-container">
+        <!-- Логотип в стиле macOS -->
+        <div class="macos-logo">
+            <div class="logo-glass">
+                <span class="logo-icon">▶</span>
+            </div>
         </div>
         
-        <!-- Заголовок с анимацией -->
-        <div class="title-group">
-            <h1 class="title-magic">
-                <span class="title-char">s</span>
-                <span class="title-char accent-m">M</span>
-                <span class="title-char">e</span>
-                <span class="title-char">N</span>
-                <span class="title-char">a</span>
-                <span class="title-accent">.</span>
-                <span class="title-char">Tv</span>
+        <!-- Заголовок с кастомными буквами -->
+        <div class="title-section">
+            <h1 class="macos-title">
+                <span class="char-s">S</span>
+                <span class="char-m">M</span>
+                <span class="char-e">E</span>
+                <span class="char-n">N</span>
+                <span class="char-a">A</span>
+                <span class="char-dot">.</span>
+                <span class="char-t">T</span>
+                <span class="char-v">V</span>
             </h1>
-            <p class="subtitle-elegant">Стриминг перерождается</p>
+            <p class="macos-subtitle">МЕНЯЙСЯ, А МЫ С ТОБОЙ.</p>
         </div>
         
-        <!-- Счетчик в стеклянном стиле -->
-        <div class="countdown-glass">
-            <div class="countdown-title-soft">До перерождения осталось</div>
-            <div class="countdown-crystals">
-                <div class="crystal-card">
-                    <div class="crystal-number" id="days">00</div>
-                    <div class="crystal-label">дней</div>
+        <!-- Минималистичный счетчик -->
+        <div class="macos-countdown">
+            <div class="countdown-grid">
+                <div class="time-unit">
+                    <div class="time-number" id="days">00</div>
+                    <div class="time-label">ДНЕЙ</div>
                 </div>
-                <div class="crystal-card">
-                    <div class="crystal-number" id="hours">00</div>
-                    <div class="crystal-label">часов</div>
+                <div class="time-separator">:</div>
+                <div class="time-unit">
+                    <div class="time-number" id="hours">00</div>
+                    <div class="time-label">ЧАС</div>
                 </div>
-                <div class="crystal-card">
-                    <div class="crystal-number" id="minutes">00</div>
-                    <div class="crystal-label">минут</div>
+                <div class="time-separator">:</div>
+                <div class="time-unit">
+                    <div class="time-number" id="minutes">00</div>
+                    <div class="time-label">МИН</div>
                 </div>
-                <div class="crystal-card">
-                    <div class="crystal-number" id="seconds">00</div>
-                    <div class="crystal-label">секунд</div>
+                <div class="time-separator">:</div>
+                <div class="time-unit">
+                    <div class="time-number" id="seconds">00</div>
+                    <div class="time-label">СЕК</div>
                 </div>
             </div>
         </div>
         
-        <!-- Особенности в стиле карточек -->
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🎥</div>
-                <div class="feature-text">Прямые трансляции</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">💬</div>
-                <div class="feature-text">Живой диалог</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🎮</div>
-                <div class="feature-text">Интерактивность</div>
-            </div>
-        </div>
-        
-        <!-- Соцсети в стиле "капель" -->
-        <div class="social-drops">
-            <a href="#" class="social-drop telegram">
-                <span class="drop-icon">✈️</span>
-                <span class="drop-text">Telegram</span>
-            </a>
-            <a href="#" class="social-drop youtube">
-                <span class="drop-icon">📺</span>
-                <span class="drop-text">YouTube</span>
-            </a>
-            <a href="#" class="social-drop vk">
-                <span class="drop-icon">👥</span>
-                <span class="drop-text">ВКонтакте</span>
-            </a>
-        </div>
-        
-        <!-- Статус с анимацией -->
-        <div class="status-pulse">
-            <div class="pulse-dot"></div>
-            <span class="pulse-text">Идет алхимия дизайна</span>
+        <!-- Статус бар -->
+        <div class="status-bar">
+            <div class="status-dot"></div>
+            <span class="status-text">СКОРО ЗАПУСК</span>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <!-- 🔥 FORCE UPDATE -->
 </body>
 </html>
