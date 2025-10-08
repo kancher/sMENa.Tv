@@ -57,7 +57,7 @@ body {
     background: var(--macos-glass);
     backdrop-filter: blur(25px);
     border: 1px solid var(--macos-border);
-    border-radius: 20px;
+    border-radius: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -68,6 +68,7 @@ body {
     cursor: pointer;
     transform: scale(1.05)
     transform-origin: center;
+    overflow: hidden;
 }
 
 /* Для десктопа - плавное увеличение */
