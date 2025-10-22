@@ -2,51 +2,125 @@
 
 type AIModel = 'chat' | 'code';
 
+// Модели CloudFlare Workers AI
+const MODELS = {
+  chat: '@cf/meta/llama-2-7b-chat-int8',      // Для общения
+  code: '@hf/thebloke/deepseek-coder-6.7b-instruct-awq' // Для программирования
+};
+
 export class AIService {
-  private static async makeRequest(model: string, prompt: string) {
+  static async getResponse(prompt: string, mode: AIModel): Promise<string> {
     try {
-      // В реальной версии здесь будет вызов CloudFlare Workers AI
-      // Сейчас имитируем ответ для тестирования
+      // В реальном приложении здесь будет вызов к CloudFlare Workers AI
+      // Но так как мы на статических страницах, используем улучшенную имитацию
       
-      if (model === 'code') {
-        return this.generateCodeResponse(prompt);
-      } else {
-        return this.generateChatResponse(prompt);
-      }
+      return await this.generateIntelligentResponse(prompt, mode);
     } catch (error) {
       console.error('AI request failed:', error);
-      return 'Извините, произошла ошибка. Попробуйте ещё раз.';
+      return '⚠️ Извините, в данный момент AI недоступен. Мы работаем над подключением настоящих моделей CloudFlare!';
     }
   }
 
-  private static generateCodeResponse(prompt: string): string {
-    const responses = [
-      `Вот решение вашей задачи:\n\n\`\`\`javascript\nfunction solution() {\n  // Ваш код здесь\n  return "Результат";\n}\n\`\`\``,
-      
-      `Для этой задачи рекомендую:\n\n\`\`\`python\ndef main():\n    # Реализация\n    pass\n\`\`\``,
-      
-      `Попробуйте этот подход:\n\n\`\`\`typescript\ninterface Solution {\n  // Типы\n}\n\nconst solve = (): Solution => {\n  // Логика\n};\n\`\`\``
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  }
-
-  private static generateChatResponse(prompt: string): string {
-    const responses = [
-      "Отличный вопрос! Давайте разберём его подробнее...",
-      "Понимаю ваш интерес к этой теме. Вот что я могу сказать...",
-      "Интересная мысль! С точки зрения AI это выглядит так...",
-      "Спасибо за вопрос! Вот мои рекомендации...",
-      "Отличная тема для обсуждения! Давайте порассуждаем вместе..."
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)] + `\n\nВаш запрос: "${prompt}"`;
-  }
-
-  static async getResponse(prompt: string, mode: AIModel): Promise<string> {
+  private static async generateIntelligentResponse(prompt: string, mode: AIModel): Promise<string> {
     // Имитация задержки сети
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+
+    const lowerPrompt = prompt.toLowerCase();
+
+    if (mode === 'code') {
+      return this.generateCodeResponse(lowerPrompt, prompt);
+    } else {
+      return this.generateChatResponse(lowerPrompt, prompt);
+    }
+  }
+
+  private static generateCodeResponse(lowerPrompt: string, originalPrompt: string): string {
+    // Умные ответы для программирования
+    if (lowerPrompt.includes('javascript') || lowerPrompt.includes('js')) {
+      return `Вот решение на JavaScript:\n\n\`\`\`javascript\n// ${originalPrompt}\nfunction solution() {\n  // Ваша логика здесь\n  console.log("Привет, мир!");\n  return "Готово!";\n}\n\n// Использование\nsolution();\n\`\`\`\n\nЭто базовая структура. Нужна более конкретная помощь?`;
+    }
+
+    if (lowerPrompt.includes('python') || lowerPrompt.includes('py')) {
+      return `Вот решение на Python:\n\n\`\`\`python\n# ${originalPrompt}\ndef main():\n    print("Hello World")\n    return "Успешно!"\n\nif __name__ == "__main__":\n    main()\n\`\`\`\n\nПопробуйте этот код! 🐍`;
+    }
+
+    if (lowerPrompt.includes('html') || lowerPrompt.includes('css')) {
+      return `Вот пример вёрстки:\n\n\`\`\`html\n<!DOCTYPE html>\n<html>\n<head>\n    <title>${originalPrompt}</title>\n    <style>\n        body { \n            font-family: Arial, sans-serif;\n            margin: 40px;\n        }\n    </style>\n</head>\n<body>\n    <h1>Ваша страница</h1>\n</body>\n</html>\n\`\`\``;
+    }
+
+    if (lowerPrompt.includes('react')) {
+      return `Вот компонент React:\n\n\`\`\`jsx\nimport React from 'react';\n\nfunction ${this.capitalizeFirst(originalPrompt.split(' ')[0]) || 'MyComponent'}() {\n  return (\n    <div>\n      <h1>${originalPrompt}</h1>\n      <p>Ваш компонент готов!</p>\n    </div>\n  );\n}\n\nexport default ${this.capitalizeFirst(originalPrompt.split(' ')[0]) || 'MyComponent'};\n\`\`\`\n\nЭто основа для React компонента. ⚛️`;
+    }
+
+    // Общий ответ для программирования
+    const codeResponses = [
+      `Для задачи "${originalPrompt}" рекомендую:\n\n- Разбить на подзадачи\n- Использовать чистые функции\n- Добавить обработку ошибок\n- Протестировать с разными данными\n\nНужна помощь с конкретным языком?`,
+      
+      `Отличная задача по программированию! 🚀\n\nСоветы:\n1. Сначала спланируйте алгоритм\n2. Напишите псевдокод\n3. Реализуйте поэтапно\n4. Протестируйте\n\nХотите, чтобы я помог с кодом?`,
+      
+      `По теме "${originalPrompt}":\n\n\`\`\`javascript\n// Пример структуры\nclass Solution {\n  constructor() {\n    // инициализация\n  }\n  \n  solve(input) {\n    // ваша логика\n    return input;\n  }\n}\n\`\`\``
+    ];
+
+    return codeResponses[Math.floor(Math.random() * codeResponses.length)];
+  }
+
+  private static generateChatResponse(lowerPrompt: string, originalPrompt: string): string {
+    // Умные контекстные ответы для общения
     
-    return this.makeRequest(mode, prompt);
+    // Приветствия
+    if (lowerPrompt.includes('привет') || lowerPrompt.includes('здравств') || lowerPrompt.includes('hello')) {
+      const greetings = [
+        "Привет! 👋 Рада вас видеть! Как ваши дела?",
+        "Здравствуйте! Очень приятно с вами пообщаться! 😊",
+        "Привет-привет! Готов помочь с любыми вопросами!",
+        "Приветствую! Как проходит ваш день?"
+      ];
+      return greetings[Math.floor(Math.random() * greetings.length)];
+    }
+
+    // Вопрос о делах
+    if (lowerPrompt.includes('как дел') || lowerPrompt.includes('как ты') || lowerPrompt.includes('how are')) {
+      const statuses = [
+        "У меня всё отлично! Работаю над улучшением sMeNa.Tv 🚀 А у вас как дела?",
+        "Прекрасно! Помогаю создавать крутые проекты. А вы как?",
+        "Всё замечательно! Готова к новым интересным беседам. 😄",
+        "Отлично! Сегодня уже помогла нескольким разработчикам. Рада вам!"
+      ];
+      return statuses[Math.floor(Math.random() * statuses.length)];
+    }
+
+    // Вопросы о sMeNa.Tv
+    if (lowerPrompt.includes('smena') || lowerPrompt.includes('смена') || lowerPrompt.includes('телевидение')) {
+      return "sMeNa.Tv - это инновационная платформа для народного телевидения! 🎬 Мы создаём пространство для прямых эфиров, общения и творчества. Скоро запуск - осталось совсем немного! 🚀";
+    }
+
+    // Благодарности
+    if (lowerPrompt.includes('спасибо') || lowerPrompt.includes('благодар') || lowerPrompt.includes('thank')) {
+      return "Пожалуйста! Всегда рада помочь! 😊 Если есть ещё вопросы - обращайтесь!";
+    }
+
+    // Вопросы о возможностях
+    if (lowerPrompt.includes('что ты умеешь') || lowerPrompt.includes('возможност') || lowerPrompt.includes('help')) {
+      return "Я могу:\n\n💬 **Общаться** на любые темы\n💻 **Помогать с программированием** \n🚀 **Рассказывать о sMeNa.Tv**\n🎯 **Давать советы и рекомендации**\n\nВыберите режим выше и задавайте вопросы!";
+    }
+
+    // Общие интеллектуальные ответы
+    const chatResponses = [
+      `Интересный вопрос! По теме "${originalPrompt}" могу сказать, что это перспективное направление. Главное - начать действовать! 🎯`,
+      
+      `Отличная мысль! 🧐 Давайте порассуждаем вместе... \n\nНа мой взгляд, важно учитывать разные аспекты этого вопроса.`,
+      
+      `Понимаю ваш интерес к "${originalPrompt}". Это действительно важная тема в современном цифровом мире.`,
+      
+      `Спасибо за такой содержательный вопрос! 🤔 \n\nДумаю, здесь стоит обратить внимание на несколько ключевых моментов...`,
+      
+      `О, это интересно! По теме "${originalPrompt}" у меня есть несколько мыслей...`
+    ];
+
+    return chatResponses[Math.floor(Math.random() * chatResponses.length)];
+  }
+
+  private static capitalizeFirst(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 }
