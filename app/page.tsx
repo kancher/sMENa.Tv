@@ -98,7 +98,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-2">
           <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
           <span className="text-[10px] text-white/30 tracking-[0.1em] uppercase font-light">
-            БЭтка №2.2 от 2025.10.22
+            БЭтка №2.2.1 от 2025.10.22
           </span>
         </div>
 
