@@ -38,7 +38,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 flex items-center justify-center p-6 font-sans select-none">
-      
       <div className="text-center w-full max-w-sm">
         
         {/* Логотип */}
@@ -48,8 +47,12 @@ export default function Home() {
             alt="sMeNa.Tv" 
             className="w-12 h-12 object-contain"
             onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextSibling && ((e.currentTarget.nextSibling as HTMLElement).style.display = 'block';
+              const target = e.currentTarget as HTMLImageElement;
+              target.style.display = 'none';
+              const nextSibling = target.nextSibling as HTMLElement;
+              if (nextSibling) {
+                nextSibling.style.display = 'block';
+              }
             }}
           />
           <div className="text-xl font-bold bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent hidden">
@@ -113,7 +116,6 @@ export default function Home() {
             БЭтка №4.1 от 2025.10.22
           </span>
         </div>
-
       </div>
     </div>
   );
