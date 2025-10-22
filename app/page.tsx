@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -42,15 +43,13 @@ export default function Home() {
         
         {/* Логотип */}
         <div className="w-20 h-20 mx-auto mb-8 bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg flex items-center justify-center cursor-pointer transition-all duration-300 hover:shadow-xl">
-          {/* Проверяем наличие логотипа */}
           <img 
             src="/images/logo.png" 
             alt="sMeNa.Tv" 
             className="w-12 h-12 object-contain"
             onError={(e) => {
-              // Если картинка не загрузилась, показываем текстовый логотип
               e.currentTarget.style.display = 'none';
-              e.currentTarget.nextSibling && ((e.currentTarget.nextSibling as HTMLElement).style.display = 'block');
+              e.currentTarget.nextSibling && ((e.currentTarget.nextSibling as HTMLElement).style.display = 'block';
             }}
           />
           <div className="text-xl font-bold bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent hidden">
@@ -94,24 +93,24 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Простые но стильные кнопки */}
-<div className="flex gap-4 justify-center mb-8">
-  <Link 
-    href="/lounge"
-    className="bg-white/90 text-gray-700 px-8 py-3 rounded-xl border border-gray-300 shadow-lg transition-all duration-300 hover:shadow-xl hover:bg-white hover:-translate-y-0.5 font-medium no-underline inline-block"
-  >
-    Гостиная
-  </Link>
-  <button className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-8 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 font-medium cursor-not-allowed opacity-60">
-    Мастерская
-  </button>
-</div>
+        {/* Кнопки с навигацией */}
+        <div className="flex gap-4 justify-center mb-8">
+          <Link 
+            href="/lounge"
+            className="bg-white/90 text-gray-700 px-8 py-3 rounded-xl border border-gray-300 shadow-lg transition-all duration-300 hover:shadow-xl hover:bg-white hover:-translate-y-0.5 font-medium no-underline inline-block"
+          >
+            Гостиная
+          </Link>
+          <button className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-8 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 font-medium cursor-not-allowed opacity-60">
+            Мастерская
+          </button>
+        </div>
 
         {/* Статус бар */}
         <div className="flex items-center justify-center gap-2">
           <div className="w-2 h-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full animate-pulse"></div>
           <span className="text-xs text-gray-400 tracking-widest font-light">
-            БЭтка №3.1 от 2025.10.22
+            БЭтка №4.1 от 2025.10.22
           </span>
         </div>
 
