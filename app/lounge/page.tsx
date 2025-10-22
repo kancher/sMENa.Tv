@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 
 type Message = {
   id: string;
@@ -25,7 +26,6 @@ export default function Lounge() {
   const [chatMode, setChatMode] = useState<ChatMode>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Автопрокрутка к новым сообщениям
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -44,8 +44,6 @@ export default function Lounge() {
     setInputText('');
     setIsLoading(true);
 
-    // TODO: Здесь будет интеграция с CloudFlare Workers AI
-    // Пока имитируем ответ
     setTimeout(() => {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -72,12 +70,12 @@ export default function Lounge() {
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => window.history.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            <Link 
+              href="/"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-700"
             >
               ← Назад
-            </button>
+            </Link>
             <h1 className="text-xl font-semibold text-gray-800">Гостиная</h1>
           </div>
           
