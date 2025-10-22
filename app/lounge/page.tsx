@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { AIService } from '@/lib/ai-service';
 
 type Message = {
   id: string;
   text: string;
   isUser: boolean;
   timestamp: Date;
+  isError?: boolean;
 };
 
 type ChatMode = 'code' | 'chat';
@@ -44,16 +46,30 @@ export default function Lounge() {
     setInputText('');
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const aiResponse = await AIService.getResponse(inputText, chatMode);
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: `Это ответ в режиме ${chatMode === 'code' ? 'программирования' : 'общения'}. В реальной версии здесь будет ответ от AI!`,
+        text: aiResponse,
         isUser: false,
         timestamp: new Date()
       };
+      
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: '⚠️ Произошла ошибка при обращении к AI. Попробуйте ещё раз.',
+        isUser: false,
+        isError: true,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -61,6 +77,17 @@ export default function Lounge() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const clearChat = () => {
+    setMessages([
+      {
+        id: '1',
+        text: 'Чат очищен! Чем могу помочь?',
+        isUser: false,
+        timestamp: new Date()
+      }
+    ]);
   };
 
   return (
@@ -76,30 +103,41 @@ export default function Lounge() {
             >
               ← Назад
             </Link>
-            <h1 className="text-xl font-semibold text-gray-800">Гостиная</h1>
+            <h1 className="text-xl font-semibold text-gray-800">Гостиная AI</h1>
           </div>
           
-          {/* Переключатель режимов */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-3">
+            {/* Переключатель режимов */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setChatMode('chat')}
+                className={`px-4 py-2 rounded-md transition-all ${
+                  chatMode === 'chat' 
+                    ? 'bg-white shadow-sm text-gray-800' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                💬 Общение
+              </button>
+              <button
+                onClick={() => setChatMode('code')}
+                className={`px-4 py-2 rounded-md transition-all ${
+                  chatMode === 'code' 
+                    ? 'bg-white shadow-sm text-gray-800' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                💻 Код
+              </button>
+            </div>
+            
+            {/* Кнопка очистки чата */}
             <button
-              onClick={() => setChatMode('chat')}
-              className={`px-4 py-2 rounded-md transition-all ${
-                chatMode === 'chat' 
-                  ? 'bg-white shadow-sm text-gray-800' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              onClick={clearChat}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Очистить чат"
             >
-              💬 Общение
-            </button>
-            <button
-              onClick={() => setChatMode('code')}
-              className={`px-4 py-2 rounded-md transition-all ${
-                chatMode === 'code' 
-                  ? 'bg-white shadow-sm text-gray-800' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              💻 Код
+              🗑️
             </button>
           </div>
         </div>
@@ -117,19 +155,30 @@ export default function Lounge() {
                 className={`max-w-[80%] rounded-2xl p-4 ${
                   message.isUser
                     ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                    : message.isError
+                    ? 'bg-red-50 border border-red-200 text-red-800'
                     : 'bg-white border border-gray-200 text-gray-800 shadow-sm'
                 }`}
               >
-                <div className="whitespace-pre-wrap">{message.text}</div>
+                <div className="whitespace-pre-wrap leading-relaxed">
+                  {message.text}
+                </div>
                 <div
                   className={`text-xs mt-2 ${
-                    message.isUser ? 'text-cyan-100' : 'text-gray-400'
+                    message.isUser 
+                      ? 'text-cyan-100' 
+                      : message.isError
+                      ? 'text-red-400'
+                      : 'text-gray-400'
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString('ru-RU', {
                     hour: '2-digit',
                     minute: '2-digit'
                   })}
+                  {!message.isUser && !message.isError && (
+                    <span className="ml-2">• Алиса</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -139,10 +188,16 @@ export default function Lounge() {
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="flex items-center gap-3">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    Алиса думает...
+                    {chatMode === 'code' ? ' 💻' : ' 💬'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -163,8 +218,8 @@ export default function Lounge() {
                 onKeyPress={handleKeyPress}
                 placeholder={
                   chatMode === 'code' 
-                    ? 'Задай вопрос по программированию...' 
-                    : 'Напиши сообщение...'
+                    ? 'Задай вопрос по программированию... (например: "Как сделать калькулятор на React?")' 
+                    : 'Напиши сообщение... (например: "Расскажи о возможностях AI")'
                 }
                 className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
                 rows={1}
@@ -174,16 +229,17 @@ export default function Lounge() {
             <button
               onClick={handleSendMessage}
               disabled={!inputText.trim() || isLoading}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-6 rounded-2xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95"
+              className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-6 rounded-2xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[100px]"
             >
-              Отправить
+              {isLoading ? '...' : '➤'}
             </button>
           </div>
           
           {/* Подсказка режима */}
           <div className="text-center mt-3">
             <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              {chatMode === 'code' ? '💻 Режим программирования' : '💬 Режим общения'}
+              {chatMode === 'code' ? '💻 Режим программирования' : '💬 Режим общения'} 
+              {isLoading && ' • Алиса печатает...'}
             </span>
           </div>
         </div>
