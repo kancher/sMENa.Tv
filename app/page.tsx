@@ -39,10 +39,14 @@ export default function Home() {
     <div className="min-h-screen bg-[#0d0b14] flex items-center justify-center p-6 font-sans select-none">
       <div className="text-center w-full max-w-sm">
         
-        {/* Логотип в стеклянном стиле */}
-        <div className="w-16 h-16 mx-auto mb-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center shadow-2xl">
-          <div className="text-lg font-semibold text-white/90">S</div>
-        </div>
+{/* Логотип в стеклянном стиле */}
+<div className="w-16 h-16 mx-auto mb-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
+  <img 
+    src="/images/logo.png" 
+    alt="sMeNa.Tv" 
+    className="w-10 h-10 object-contain"
+  />
+</div>
 
         {/* Заголовок sMeNa.Tv с акцентной точкой */}
         <h1 className="text-3xl font-bold mb-4 text-white/95 tracking-tight">
