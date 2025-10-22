@@ -95,14 +95,17 @@ export default function Home() {
         </div>
 
         {/* Простые но стильные кнопки */}
-        <div className="flex gap-4 justify-center mb-8">
-          <button className="bg-white/90 text-gray-700 px-8 py-3 rounded-xl border border-gray-300 shadow-lg transition-all duration-300 hover:shadow-xl hover:bg-white hover:-translate-y-0.5 font-medium">
-            Гостиная
-          </button>
-          <button className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-8 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 font-medium">
-            Мастерская
-          </button>
-        </div>
+<div className="flex gap-4 justify-center mb-8">
+  <a 
+    href="/lounge"
+    className="bg-white/90 text-gray-700 px-8 py-3 rounded-xl border border-gray-300 shadow-lg transition-all duration-300 hover:shadow-xl hover:bg-white hover:-translate-y-0.5 font-medium no-underline inline-block"
+  >
+    Гостиная
+  </a>
+  <button className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-8 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 font-medium cursor-not-allowed opacity-60">
+    Мастерская
+  </button>
+</div>
 
         {/* Статус бар */}
         <div className="flex items-center justify-center gap-2">
