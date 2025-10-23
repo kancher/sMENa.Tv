@@ -2,12 +2,12 @@
 
 type AIModel = 'chat' | 'code';
 
-const AI_WORKER_URL = 'https://smena-ai-worker.ТВОЙ-АККАУНТ.workers.dev';
+const AI_WORKER_URL = 'https://smena-ai-worker.smenatv.workers.dev';
 
 export class AIService {
   static async getResponse(prompt: string, mode: AIModel): Promise<string> {
     try {
-      // Пытаемся использовать настоящий Worker AI
+      // Используем настоящий Cloudflare Worker AI!
       const response = await fetch(AI_WORKER_URL, {
         method: 'POST',
         headers: {
@@ -39,7 +39,7 @@ export class AIService {
   }
 
   private static async getFallbackResponse(prompt: string, mode: AIModel): Promise<string> {
-    // Твоя улучшенная имитация остаётся как запасной вариант
+    // ... оставь твою существующую имитацию ...
     await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
 
     const lowerPrompt = prompt.toLowerCase();
@@ -51,12 +51,5 @@ export class AIService {
     }
   }
 
-  // ... остальной код имитации остаётся таким же ...
-  private static generateCodeResponse(lowerPrompt: string, originalPrompt: string): string {
-    // Твой существующий код...
-  }
-
-  private static generateChatResponse(lowerPrompt: string, originalPrompt: string): string {
-    // Твой существующий код...
-  }
+  // ... остальной код имитации оставь без изменений ...
 }
