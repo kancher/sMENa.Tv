@@ -1,19 +1,15 @@
-// lib/ai-service.ts
-
-const AI_WORKER_URL = 'https://smena-ai-worker.smenatv.workers.dev';
+/ lib/ai-service.ts
 
 export class AIService {
-  static async getResponse(prompt: string): Promise<string> {
+  static async getResponse(messages: { role: string; content: string }[]): Promise<string> {
     try {
-      // Используем только чатовый режим
       const response = await fetch(AI_WORKER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: prompt
-          // убираем параметр mode
+          messages: messages
         })
       });
 
