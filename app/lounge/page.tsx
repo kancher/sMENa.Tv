@@ -12,20 +12,17 @@ type Message = {
   isError?: boolean;
 };
 
-type ChatMode = 'code' | 'chat';
-
 export default function Lounge() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! Я Алиса - твой AI-помощник. Выбери режим общения выше!',
+      text: 'Привет! Я Алиса - твой AI-помощник. Готова общаться на любые темы! 💬',
       isUser: false,
       timestamp: new Date()
     }
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatMode, setChatMode] = useState<ChatMode>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +44,7 @@ export default function Lounge() {
     setIsLoading(true);
 
     try {
-      const aiResponse = await AIService.getResponse(inputText, chatMode);
+      const aiResponse = await AIService.getResponse(inputText);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -83,7 +80,7 @@ export default function Lounge() {
     setMessages([
       {
         id: '1',
-        text: 'Чат очищен! Чем могу помочь?',
+        text: 'Чат очищен! Чем могу помочь? 💬',
         isUser: false,
         timestamp: new Date()
       }
@@ -103,34 +100,10 @@ export default function Lounge() {
             >
               ← Назад
             </Link>
-            <h1 className="text-xl font-semibold text-gray-800">Гостиная AI</h1>
+            <h1 className="text-xl font-semibold text-gray-800">💬 Гостиная AI</h1>
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Переключатель режимов */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setChatMode('chat')}
-                className={`px-4 py-2 rounded-md transition-all ${
-                  chatMode === 'chat' 
-                    ? 'bg-white shadow-sm text-gray-800' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                💬 Общение
-              </button>
-              <button
-                onClick={() => setChatMode('code')}
-                className={`px-4 py-2 rounded-md transition-all ${
-                  chatMode === 'code' 
-                    ? 'bg-white shadow-sm text-gray-800' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                💻 Код
-              </button>
-            </div>
-            
             {/* Кнопка очистки чата */}
             <button
               onClick={clearChat}
@@ -195,8 +168,7 @@ export default function Lounge() {
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <span className="text-sm text-gray-500">
-                    Алиса думает...
-                    {chatMode === 'code' ? ' 💻' : ' 💬'}
+                    Алиса думает... 💬
                   </span>
                 </div>
               </div>
@@ -216,11 +188,7 @@ export default function Lounge() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={
-                  chatMode === 'code' 
-                    ? 'Задай вопрос по программированию... (например: "Как сделать калькулятор на React?")' 
-                    : 'Напиши сообщение... (например: "Расскажи о возможностях AI")'
-                }
+                placeholder="Напиши сообщение... (например: 'Расскажи о возможностях AI' или 'Помоги с идеей для проекта')"
                 className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
                 rows={1}
                 style={{ minHeight: '48px', maxHeight: '120px' }}
@@ -235,10 +203,10 @@ export default function Lounge() {
             </button>
           </div>
           
-          {/* Подсказка режима */}
+          {/* Подсказка */}
           <div className="text-center mt-3">
             <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              {chatMode === 'code' ? '💻 Режим программирования' : '💬 Режим общения'} 
+              💬 Режим общения
               {isLoading && ' • Алиса печатает...'}
             </span>
           </div>
