@@ -97,7 +97,6 @@ export default function Home() {
         </div>
 
         {/* Кнопки с навигацией */}
-        {/*
         <div className="flex gap-4 justify-center mb-8">
           <Link 
             href="/lounge"
@@ -109,7 +108,6 @@ export default function Home() {
             Мастерская
           </button>
         </div>
-        */}
         {/* Статус бар */}
         <div className="flex items-center justify-center gap-2">
           <div className="w-2 h-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full animate-pulse"></div>
