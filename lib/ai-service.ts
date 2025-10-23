@@ -1,4 +1,5 @@
 // lib/ai-service.ts
+// 🔧 Telegram logging enabled
 
 const AI_WORKER_URL = 'https://smena-ai-worker.smenatv.workers.dev';
 
