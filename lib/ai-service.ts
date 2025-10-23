@@ -1,4 +1,6 @@
-/ lib/ai-service.ts
+// lib/ai-service.ts
+
+const AI_WORKER_URL = 'https://smena-ai-worker.smenatv.workers.dev';
 
 export class AIService {
   static async getResponse(messages: { role: string; content: string }[]): Promise<string> {
