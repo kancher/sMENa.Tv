@@ -24,7 +24,7 @@ export default function Lounge() {
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [imageMode, setImageMode] = useState(false); // Новое состояние для режима изображений
+  const [imageMode, setImageMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,14 +46,11 @@ export default function Lounge() {
     setIsLoading(true);
 
     try {
-      // Собираем историю чата для контекста
       const chatHistory = [
-        // Все предыдущие сообщения
         ...messages.map(msg => ({
           role: msg.isUser ? "user" : "assistant",
           content: msg.text
         })),
-        // Текущее сообщение пользователя
         { role: "user", content: inputText }
       ];
 
@@ -64,7 +61,7 @@ export default function Lounge() {
         text: aiResponse,
         isUser: false,
         timestamp: new Date(),
-        isImage: imageMode // Помечаем если это изображение
+        isImage: imageMode
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -99,13 +96,11 @@ export default function Lounge() {
         timestamp: new Date()
       }
     ]);
-    setImageMode(false); // Сбрасываем режим изображений
+    setImageMode(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 flex flex-col">
-      
-      {/* Шапка */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -119,7 +114,6 @@ export default function Lounge() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Переключатель режима изображений */}
             <button
               onClick={() => setImageMode(!imageMode)}
               className={`px-4 py-2 rounded-lg transition-all ${
@@ -131,7 +125,6 @@ export default function Lounge() {
               {imageMode ? '🎨 Режим изображений' : '💬 Режим общения'}
             </button>
             
-            {/* Кнопка очистки чата */}
             <button
               onClick={clearChat}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -143,7 +136,6 @@ export default function Lounge() {
         </div>
       </header>
 
-      {/* Область сообщений */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.map((message) => (
@@ -158,12 +150,11 @@ export default function Lounge() {
                     : message.isError
                     ? 'bg-red-50 border border-red-200 text-red-800'
                     : message.isImage
-                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white' // Стиль для изображений
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'
                     : 'bg-white border border-gray-200 text-gray-800 shadow-sm'
                 }`}
               >
                 {message.isImage ? (
-                  // Отображение изображения
                   <div className="text-center">
                     <div className="text-sm mb-2">🎨 Куля создала изображение:</div>
                     <img 
@@ -179,7 +170,6 @@ export default function Lounge() {
                     </div>
                   </div>
                 ) : (
-                  // Обычное текстовое сообщение
                   <div className="whitespace-pre-wrap leading-relaxed">
                     {message.text}
                   </div>
@@ -207,7 +197,6 @@ export default function Lounge() {
             </div>
           ))}
           
-          {/* Индикатор загрузки */}
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
@@ -229,14 +218,13 @@ export default function Lounge() {
         </div>
       </div>
 
-      {/* Поле ввода */}
       <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200 p-4 sticky bottom-0">
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-3">
             <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 focus-within:border-cyan-500 transition-colors">
               <textarea
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)} {/* ИСПРАВЛЕНО ЗДЕСЬ */}
+                onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
                   imageMode 
@@ -261,7 +249,6 @@ export default function Lounge() {
             </button>
           </div>
           
-          {/* Подсказка */}
           <div className="text-center mt-3">
             <span className={`text-xs px-3 py-1 rounded-full ${
               imageMode 
