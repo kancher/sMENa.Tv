@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { AIService } from '../../lib/ai-service';
 
 type Message = {
   id: string;
