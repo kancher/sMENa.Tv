@@ -17,77 +17,119 @@ export class AIService {
         aiResponse = await this.generateText(messages);
       }
 
-      // Логируем в Telegram (не блокируем основной поток)
+      // Логируем в Telegram
       this.logToTelegram(messages, aiResponse, generateImage).catch(console.error);
 
       return aiResponse;
 
     } catch (error) {
       console.error('❌ AI Service failed:', error);
-      return "Ой, что-то сломалось! 🛠️ Попробуй ещё раз! 💫";
+      
+      const lastMessage = messages[messages.length - 1]?.content || '';
+      
+      if (lastMessage.includes('нарисовать') || lastMessage.includes('изображение') || lastMessage.includes('попросил')) {
+        return 'Ой, с изображениями иногда бывают сбои! 😅 Попробуй описать по-другому? 🎨';
+      }
+      
+      return "Ой, что-то пошло не так! 🛠️ Попробуй ещё раз! 💫";
     }
   }
 
   private static async generateText(messages: { role: string; content: string }[]): Promise<string> {
     console.log('💬 Sending chat request...');
     
-    const response = await fetch(AI_WORKER_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ messages })
-    });
+    try {
+      // 🔥 УПРОЩАЕМ ИСТОРИЮ - ТОЛЬКО ТЕКСТ И ПРОМПТЫ
+      const filteredMessages = messages
+        .map(msg => {
+          const content = msg.content || '';
+          // Если это промпт для изображения - оставляем как есть
+          // Если это base64 изображение - заменяем на мета-информацию
+          if (content.includes('base64') || content.includes('data:image')) {
+            return {
+              ...msg,
+              content: '[Сгенерировано изображение]'
+            };
+          }
+          return msg;
+        })
+        .filter(msg => (msg.content || '').length < 500) // Безопасный лимит
+        .slice(-6); // Последние 6 сообщений
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('📝 Filtered messages:', filteredMessages.length);
+
+      const response = await fetch(AI_WORKER_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ messages: filteredMessages })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      console.log('✅ Chat response received');
+      return data.reply;
+
+    } catch (error) {
+      console.error('💥 generateText error:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(data.error);
-    }
-
-    console.log('✅ Chat response received');
-    return data.reply;
   }
 
   private static async generateImage(messages: { role: string; content: string }[]): Promise<string> {
+    // 🔥 БЕРЁМ ТОЛЬКО ПОСЛЕДНИЙ ПРОМПТ ОТ ПОЛЬЗОВАТЕЛЯ
     const lastMessage = messages[messages.length - 1]?.content || 'красивое изображение';
     
-    console.log('🎨 Sending image generation request:', lastMessage);
+    console.log('🎨 Image generation prompt:', lastMessage);
 
-    const response = await fetch(IMAGE_WORKER_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        prompt: lastMessage,
-        width: 512,
-        height: 512
-      })
-    });
+    try {
+      const response = await fetch(IMAGE_WORKER_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          prompt: lastMessage,
+          width: 512,
+          height: 512
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`Image generation failed: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Image generation failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Image generation failed');
+      }
+
+      console.log('✅ Image generated successfully');
+      return data.image;
+
+    } catch (error) {
+      console.error('💥 generateImage error:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Image generation failed');
-    }
-
-    console.log('✅ Image generated successfully');
-    return data.image;
   }
 
   private static async logToTelegram(messages: any[], aiReply: string, isImage: boolean = false) {
     try {
+      // 🔥 ДЛЯ ИЗОБРАЖЕНИЙ ЛОГИРУЕМ ТОЛЬКО ПРОМПТ, НЕ BASE64
+      const telegramReply = isImage ? '🎨 Сгенерировано изображение' : aiReply;
+      
       await fetch(TELEGRAM_LOGGER_URL, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           messages: messages,
-          aiReply: aiReply,
+          aiReply: telegramReply,
           isImage: isImage
         })
       });
