@@ -16,7 +16,7 @@ export default function Lounge() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! Я Куля - твой AI-помощник. Готова общаться на любые темы! 💬',
+      text: 'Привет! 🤗 Я Куля 💃 ~ твой AI-помощник. Как Жиз~з~знь 😬 [реальная💄]! 💬',
       isUser: false,
       timestamp: new Date()
     }
@@ -68,7 +68,7 @@ export default function Lounge() {
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: '⚠️ Произошла ошибка при обращении к AI. Попробуйте ещё раз.',
+        text: '⚠️ Произошла ошибка 🤦🏼‍♀️ при обращении к AI. Попробуйте ещё раз.',
         isUser: false,
         isError: true,
         timestamp: new Date()
@@ -91,7 +91,7 @@ export default function Lounge() {
     setMessages([
       {
         id: '1',
-        text: 'Чат очищен! Чем могу помочь? 💬',
+        text: 'Чат бай~бай! Чем могу помочь? 🙆‍♀️ 💬',
         isUser: false,
         timestamp: new Date()
       }
@@ -161,7 +161,7 @@ export default function Lounge() {
                     minute: '2-digit'
                   })}
                   {!message.isUser && !message.isError && (
-                    <span className="ml-2">• Алиса</span>
+                    <span className="ml-2">• Куля</span>
                   )}
                 </div>
               </div>
@@ -199,7 +199,7 @@ export default function Lounge() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Напиши сообщение... (например: 'Расскажи о возможностях AI' или 'Помоги с идеей для проекта')"
+                placeholder="Не надо стеснятся 💁‍♀️ ..."
                 className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
                 rows={1}
                 style={{ minHeight: '48px', maxHeight: '120px' }}
@@ -218,7 +218,7 @@ export default function Lounge() {
           <div className="text-center mt-3">
             <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
               💬 Режим общения
-              {isLoading && ' • Алиса печатает...'}
+              {isLoading && ' • Куля печатает...'}
             </span>
           </div>
         </div>
