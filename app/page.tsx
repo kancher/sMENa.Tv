@@ -1,4 +1,4 @@
-// app/page.tsx - УЛУЧШЕННЫЙ APPLE-STYLE DESIGN
+// app/page.tsx - ФИНАЛЬНЫЙ APPLE-STYLE DESIGN
 'use client';
 
 import Link from 'next/link';
@@ -38,16 +38,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 flex flex-col">
-      {/* Header */}
+      {/* Header - Centered Logo */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-6 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex justify-center">
           <div className="flex items-center gap-3">
             <img 
               src="/images/logo.png" 
               alt="sMeNa.Tv" 
               className="w-8 h-8"
               onError={(e) => {
-                // Fallback если лого не загрузится
                 e.currentTarget.style.display = 'none';
                 const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                 if (fallback) fallback.style.display = 'block';
@@ -57,17 +56,7 @@ export default function Home() {
               className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg hidden"
               style={{ display: 'none' }}
             ></div>
-            <span className="text-xl font-semibold text-gray-900">sMeNa.Tv</span>
           </div>
-          
-          <nav className="flex gap-6">
-            <Link 
-              href="/lounge" 
-              className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
-            >
-              Гостиная
-            </Link>
-          </nav>
         </div>
       </header>
 
@@ -107,59 +96,35 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex gap-4 justify-center">
+          {/* Version Info under Counter */}
+          <div className="mb-12">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+              Посетителей сегодня
+            </div>
+            <div className="text-2xl font-light text-gray-900 mb-2">
+              {visitors.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-400">
+              [БЕТка 5.1 от 2025.10.24~го]
+            </div>
+          </div>
+
+          {/* Single CTA Button */}
+          <div className="flex justify-center">
             <Link 
               href="/lounge"
               className="px-8 py-3 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-all text-sm font-medium"
             >
               Исследовать
             </Link>
-            <button className="px-8 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-all text-sm font-medium">
-              Узнать больше
-            </button>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
+      {/* Minimal Footer */}
       <footer className="bg-white/60 backdrop-blur-sm border-t border-gray-200/50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-center md:text-left">
-              <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
-                <img 
-                  src="/images/logo.png" 
-                  alt="sMeNa.Tv" 
-                  className="w-6 h-6"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'block';
-                  }}
-                />
-                <div 
-                  className="w-6 h-6 bg-gradient-to-r from-purple-500 to-cyan-500 rounded hidden"
-                  style={{ display: 'none' }}
-                ></div>
-                <span className="font-semibold text-gray-900">sMeNa.Tv</span>
-              </div>
-            </div>
-            
-            {/* Visitors Counter */}
-            <div className="text-center">
-              <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                Посетителей сегодня
-              </div>
-              <div className="text-2xl font-light text-gray-900">
-                {visitors.toLocaleString()}
-              </div>
-            </div>
-            
-            <div className="text-center md:text-right">
-              {/* Оставлено пустое место для будущих элементов */}
-            </div>
-          </div>
+        <div className="max-w-6xl mx-auto text-center">
+          {/* Пустой футер для баланса */}
         </div>
       </footer>
     </div>
