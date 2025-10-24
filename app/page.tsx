@@ -50,7 +50,7 @@ export default function Home() {
         setLoading(true);
         console.log('🔄 Fetching visitor stats...');
         
-        const response = await fetch('/api/cloudflare-stats');
+        const response = await fetch('/api/simple-stats');
         const data: VisitorStats = await response.json();
         
         setVisitorStats(data);
