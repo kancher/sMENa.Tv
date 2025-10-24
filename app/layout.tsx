@@ -1,3 +1,5 @@
+import './globals.css'
+
 export const metadata = {
   title: 'sMeNa.Tv',
   description: 'Народное телевидение нового поколения',
@@ -10,9 +12,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru">
-      <head>
-        <script src="https://cdn.tailwindcss.com"></script>
-      </head>
       <body className="antialiased">
         {children}
       </body>
