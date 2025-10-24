@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 // Начинаем с нуля!
 let stats = {
-  totalVisits: 0,        // ← НАЧИНАЕМ С НУЛЯ!
+  totalVisits: 0,
   todayVisits: 0,
   lastReset: new Date().toDateString()
 }
@@ -19,19 +19,26 @@ export async function GET() {
     }
     
     // 🔥 РЕАЛЬНОЕ УВЕЛИЧЕНИЕ СЧЁТЧИКА
-    stats.totalVisits += 1           // +1 реальный визит
-    stats.todayVisits += 1           // +1 сегодня
+    stats.totalVisits += 1
+    stats.todayVisits += 1
     
     console.log(`🎯 REAL VISIT! Total: ${stats.totalVisits}, Today: ${stats.todayVisits}`)
     
+    // 🔥 ВАЖНО: Отключаем кеширование!
     return NextResponse.json({
       success: true,
-      totalVisitors: stats.totalVisits,     // ← Будет увеличиваться!
-      todayVisitors: stats.todayVisits,     // ← Будет увеличиваться!
-      uniqueVisitors: Math.floor(stats.totalVisits * 0.8), // 80% уникальных
-      online: Math.min(stats.todayVisits + 2, 10), // Зависит от трафика
+      totalVisitors: stats.totalVisits,
+      todayVisitors: stats.todayVisits,
+      uniqueVisitors: Math.floor(stats.totalVisits * 0.8),
+      online: Math.min(stats.todayVisits + 2, 10),
       lastUpdated: now.toISOString(),
       message: '🎯 РЕАЛЬНЫЙ СЧЁТЧИК - увеличивается при каждом заходе!'
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
     
   } catch (error) {
