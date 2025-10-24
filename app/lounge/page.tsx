@@ -18,7 +18,7 @@ export default function Lounge() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! 🤗 Я Куля 💃 [ну такое имя 🤷🏼‍♀️] ~ твой AI-помощник. Как Жиз~з~знь 😬 [реальная💄]!? 💬',
+      text: 'Здравствуйте!🤗 Я Куля💃 Как Жиз~з~знь [реальная]💄?',
       isUser: false,
       timestamp: new Date()
     }
@@ -88,7 +88,7 @@ export default function Lounge() {
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: '⚠️ Произошла ошибка 🤦🏼‍♀️ при обращении к AI. Попробуйте ещё раз.',
+        text: '⚠️ Какая~то ошибочка 🤦🏼‍♀️ Попробуйте ещё раз.',
         isUser: false,
         isError: true,
         timestamp: new Date()
@@ -111,7 +111,7 @@ export default function Lounge() {
     setMessages([
       {
         id: '1',
-        text: 'Чат очищен! Чем могу помочь? 🙆‍♀️ 💬',
+        text: 'Чат пока~пока! Начнём Жизнь с чистого листа? 🙋‍♀️',
         isUser: false,
         timestamp: new Date()
       }
@@ -194,7 +194,7 @@ export default function Lounge() {
               >
                 {message.isImage ? (
                   <div className="text-center">
-                    <div className="text-xs mb-2 opacity-80">🎨 Куля создала:</div>
+                    <div className="text-xs mb-2 opacity-80">🎨 Куля зафундыбырила:</div>
                     {message.text && typeof message.text === 'string' && message.text.startsWith('data:image/') ? (
                       <img 
                         src={message.text} 
@@ -206,7 +206,7 @@ export default function Lounge() {
                       />
                     ) : (
                       <div className="text-white/80 bg-white/20 p-3 rounded-lg text-sm">
-                        {typeof message.text === 'string' ? message.text : 'Генерация...'}
+                        {typeof message.text === 'string' ? message.text : 'Секундашку...'}
                       </div>
                     )}
                   </div>
@@ -245,7 +245,7 @@ export default function Lounge() {
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <span className="text-xs text-gray-500">
-                    {imageMode ? '🎨 Рисует...' : '💬 Думает...'}
+                    {imageMode ? '🎨 Творю я 💁‍♀️...' : '💬 Думаю я 🙆‍♀️...'}
                   </span>
                 </div>
               </div>
@@ -267,8 +267,8 @@ export default function Lounge() {
                 onKeyPress={handleKeyPress}
                 placeholder={
                   imageMode 
-                    ? 'Опиши что нарисовать...' 
-                    : 'Напиши сообщение...'
+                    ? 'Что Великое Творим?...' 
+                    : 'Не надо стесняться...'
                 }
                 className="w-full bg-transparent border-none resize-none py-2.5 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
                 rows={1}
