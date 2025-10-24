@@ -7,28 +7,30 @@ const TELEGRAM_LOGGER_URL = 'https://smena-telegram-logger.smenatv.workers.dev';
 export class AIService {
   static async getResponse(messages: { role: string; content: string }[], generateImage: boolean = false): Promise<string> {
     try {
+      console.log(`🔄 AI Service: ${generateImage ? 'Image' : 'Text'} mode`);
+
       let aiResponse: string;
 
       if (generateImage) {
-        // Режим генерации изображений
         aiResponse = await this.generateImage(messages);
       } else {
-        // Режим обычного чата
         aiResponse = await this.generateText(messages);
       }
 
-      // Логируем в Telegram через отдельный Worker
-      await this.logToTelegram(messages, aiResponse, generateImage);
+      // Логируем в Telegram (не блокируем основной поток)
+      this.logToTelegram(messages, aiResponse, generateImage).catch(console.error);
 
       return aiResponse;
 
     } catch (error) {
-      console.error('AI failed:', error);
+      console.error('❌ AI Service failed:', error);
       return "Ой, что-то сломалось! 🛠️ Попробуй ещё раз! 💫";
     }
   }
 
   private static async generateText(messages: { role: string; content: string }[]): Promise<string> {
+    console.log('💬 Sending chat request...');
+    
     const response = await fetch(AI_WORKER_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -45,12 +47,15 @@ export class AIService {
       throw new Error(data.error);
     }
 
+    console.log('✅ Chat response received');
     return data.reply;
   }
 
   private static async generateImage(messages: { role: string; content: string }[]): Promise<string> {
     const lastMessage = messages[messages.length - 1]?.content || 'красивое изображение';
     
+    console.log('🎨 Sending image generation request:', lastMessage);
+
     const response = await fetch(IMAGE_WORKER_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -67,35 +72,27 @@ export class AIService {
 
     const data = await response.json();
     
-    if (data.error) {
-      throw new Error(data.error);
+    if (!data.success) {
+      throw new Error(data.error || 'Image generation failed');
     }
 
-    return data.image; // Base64 изображение
+    console.log('✅ Image generated successfully');
+    return data.image;
   }
 
   private static async logToTelegram(messages: any[], aiReply: string, isImage: boolean = false) {
     try {
-      // Отправляем данные в Telegram Logger Worker
-      const logResponse = await fetch(TELEGRAM_LOGGER_URL, {
+      await fetch(TELEGRAM_LOGGER_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           messages: messages,
           aiReply: aiReply,
           isImage: isImage
         })
       });
-
-      if (!logResponse.ok) {
-        console.error('Telegram logger response error');
-      }
-
     } catch (error) {
       console.error('Telegram log failed:', error);
-      // Игнорируем ошибки логирования - не прерываем основной процесс
     }
   }
 }
