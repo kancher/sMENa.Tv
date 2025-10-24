@@ -41,21 +41,26 @@ export default function Home() {
       {/* Header - Centered Logo */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-6 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto flex justify-center">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/images/logo.png" 
-              alt="sMeNa.Tv" 
-              className="w-8 h-8"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = 'block';
-              }}
-            />
-            <div 
-              className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg hidden"
-              style={{ display: 'none' }}
-            ></div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/images/logo.png" 
+                alt="sMeNa.Tv" 
+                className="w-8 h-8"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'block';
+                }}
+              />
+              <div 
+                className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg hidden"
+                style={{ display: 'none' }}
+              ></div>
+            </div>
+            <div className="text-sm text-gray-600 font-light">
+              sMeNa.Tv ~ Это Ты!
+            </div>
           </div>
         </div>
       </header>
@@ -71,7 +76,7 @@ export default function Home() {
               к <span className="bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">ЛУЧшему</span>,
             </h1>
             <div className="text-2xl md:text-3xl text-gray-600 font-light">
-              А мы...А МЫ с тобой?!
+              А мы...А МЫ с тобой?
             </div>
           </div>
 
@@ -105,7 +110,7 @@ export default function Home() {
               {visitors.toLocaleString()}
             </div>
             <div className="text-sm text-gray-400">
-              [БЕТка 5.1 от 2025.10.24~го]
+              [бЭтка 5.2 от 2025.10.24~го]
             </div>
           </div>
 
