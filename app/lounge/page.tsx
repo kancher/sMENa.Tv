@@ -57,7 +57,7 @@ export default function Lounge() {
         { role: "user", content: inputText }
       ];
 
-      const aiResponse = await AIService.getResponse(chatHistory, imageMode);
+      const aiResponse = await AIService.getResponse(chatHistory);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
