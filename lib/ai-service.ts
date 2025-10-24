@@ -71,7 +71,7 @@ export class AIService {
       throw new Error(data.error);
     }
 
-    return data.imageUrl || data.image; // Base64 изображение
+    return data.image; // Base64 изображение
   }
 
   private static async logToTelegram(messages: any[], aiReply: string, isImage: boolean = false) {
