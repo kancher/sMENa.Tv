@@ -1,4 +1,4 @@
-// app/page.tsx - С РЕАЛЬНЫМ СЧЁТЧИКОМ
+// app/page.tsx - ФИНАЛЬНЫЙ APPLE-STYLE DESIGN
 'use client';
 
 import Link from 'next/link';
@@ -44,31 +44,31 @@ export default function Home() {
     }, 1000);
 
     // 🔥 РЕАЛЬНЫЙ СЧЁТЧИК ПОСЕТИТЕЛЕЙ
-    const fetchRealStats = async () => {
+    const fetchVisitorStats = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Loading real visitor stats...');
+        console.log('🔄 Loading visitor stats...');
         
-        const response = await fetch(`/api/visit?t=${Date.now()}`);
+        const response = await fetch('/api/visitors');
         const data: VisitorStats = await response.json();
         
         setVisitorStats(data);
         setVisitors(data.totalVisitors);
-        console.log('✅ Real stats loaded:', data);
+        console.log('✅ Stats loaded:', data);
         
       } catch (error) {
-        console.error('❌ Failed to load real stats:', error);
+        console.error('❌ Failed to load stats:', error);
         // Fallback
-        setVisitors(0);
+        setVisitors(1568);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRealStats();
+    fetchVisitorStats();
     
     // Обновляем каждые 2 минуты
-    const statsInterval = setInterval(fetchRealStats, 2 * 60 * 1000);
+    const statsInterval = setInterval(fetchVisitorStats, 2 * 60 * 1000);
     
     return () => {
       clearInterval(timer);
@@ -141,7 +141,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК С РЕАЛЬНЫМ СЧЁТЧИКОМ */}
+          {/* Version Info under Counter */}
           <div className="mb-12">
             <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
               {loading ? 'Загрузка...' : 'Посетителей сегодня'}
@@ -160,16 +160,14 @@ export default function Home() {
                 <div className="text-sm text-gray-400 space-y-1">
                   {visitorStats && visitorStats.success ? (
                     <>
-                      <div className="text-green-600 font-medium">
-                        +{visitorStats.todayVisitors} сегодня
-                      </div>
+                      <div>+{visitorStats.todayVisitors} сегодня</div>
                       <div>{visitorStats.uniqueVisitors.toLocaleString()} уникальных</div>
-                      <div className="text-xs text-blue-500">
-                        {visitorStats.message}
+                      <div className="text-green-600 text-xs font-medium">
+                        🎯 Реальный счётчик - обновите страницу!
                       </div>
                     </>
                   ) : (
-                    <div className="text-orange-500">Загрузка реальных данных...</div>
+                    <div className="text-orange-500 text-xs">⚠️ Используются тестовые данные</div>
                   )}
                   <div className="text-xs">[бЭтка 5.2 от 2025.10.24~го]</div>
                 </div>
