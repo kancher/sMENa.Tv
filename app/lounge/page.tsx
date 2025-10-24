@@ -111,7 +111,7 @@ export default function Lounge() {
             >
               ← Назад
             </Link>
-            <h1 className="text-xl font-semibold text-gray-800">💬 Гостиная AI</h1>
+            <h1 className="text-xl font-semibold text-gray-800">💜 Гостиная Кули 💃</h1>
           </div>
           
           <div className="flex items-center gap-3">
