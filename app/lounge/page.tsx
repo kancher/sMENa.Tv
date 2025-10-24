@@ -1,4 +1,4 @@
-// app/lounge/page.tsx - КОМПАКТНЫЙ APPLE-STYLE DESIGN
+// app/lounge/page.tsx - КОМПАКТНЫЙ APPLE-STYLE DESIGN С КОНТЕКСТОМ РЕЖИМОВ
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -47,15 +47,34 @@ export default function Lounge() {
     setIsLoading(true);
 
     try {
-      const chatHistory = [
-        ...messages.map(msg => ({
-          role: msg.isUser ? "user" : "assistant",
-          content: msg.text
-        })),
-        { role: "user", content: inputText }
+      // 🔥 ОБНОВЛЕННАЯ ЛОГИКА - ПЕРЕДАЕМ ИНФОРМАЦИЮ О РЕЖИМАХ
+      const chatHistory = messages.map(msg => {
+        if (msg.isImage) {
+          // Для сгенерированных изображений - добавляем контекст
+          return {
+            role: "assistant" as const,
+            content: `[Сгенерировала изображение по запросу: "${msg.text}"]`
+          };
+        } else {
+          // Для обычных сообщений
+          return {
+            role: msg.isUser ? "user" as const : "assistant" as const,
+            content: msg.text
+          };
+        }
+      });
+
+      // Добавляем информацию о текущем режиме и новое сообщение
+      const enhancedHistory = [
+        ...chatHistory,
+        { 
+          role: "system" as const, 
+          content: `ТЕКУЩИЙ РЕЖИМ: ${imageMode ? 'ГЕНЕРАЦИЯ ИЗОБРАЖЕНИЙ' : 'ТЕКСТОВЫЙ ЧАТ'}`
+        },
+        { role: "user" as const, content: inputText }
       ];
 
-      const aiResponse = await AIService.getResponse(chatHistory, imageMode);
+      const aiResponse = await AIService.getResponse(enhancedHistory, imageMode);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
