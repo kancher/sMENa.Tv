@@ -5,3 +5,44 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
+
+/* 🔥 ФИКСЫ ДЛЯ IPHONE - ПРЕДОТВРАЩЕНИЕ ZOOM */
+@supports (-webkit-touch-callout: none) {
+  /* iPhone-specific fixes */
+  input, textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Prevent zoom on focus */
+  textarea:focus, input:focus {
+    font-size: 16px !important;
+    transform: scale(1) !important;
+  }
+}
+
+/* Mobile optimizations */
+@media screen and (max-width: 768px) {
+  /* Prevent zoom and scaling */
+  textarea {
+    transform: scale(1);
+    transform-origin: top left;
+  }
+  
+  /* Improve touch targets */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Ensure proper viewport scaling */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Fix for iOS form elements */
+input, textarea, select {
+  -webkit-appearance: none;
+  border-radius: 0;
+}
