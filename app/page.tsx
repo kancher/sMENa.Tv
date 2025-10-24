@@ -49,7 +49,7 @@ export default function Home() {
         setLoading(true);
         console.log('🔄 Loading real visitor stats...');
         
-        const response = await fetch('/api/real-stats');
+        const response = await fetch(`/api/visit?t=${Date.now()}`);
         const data: VisitorStats = await response.json();
         
         setVisitorStats(data);
