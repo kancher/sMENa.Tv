@@ -1,5 +1,3 @@
-// lib/ai-service.ts - ИСПРАВЛЕННАЯ ВЕРСИЯ БЕЗ ТАЙМАУТА
-
 const AI_WORKER_URL = 'https://smena-ai-worker.smenatv.workers.dev';
 const IMAGE_WORKER_URL = 'https://smena-image-worker.smenatv.workers.dev';
 const TELEGRAM_LOGGER_URL = 'https://smena-telegram-logger.smenatv.workers.dev';
@@ -19,7 +17,6 @@ export class AIService {
         ? await this.generateImage(messages)
         : await this.generateText(messages);
 
-      // 🔥 ВОЗВРАЩАЕМ СТАБИЛЬНУЮ ОТПРАВКУ БЕЗ ТАЙМАУТА
       this.logToTelegram(messages, aiResponse, generateImage).catch(error => 
         console.warn('⚠️ Telegram log failed:', error.message)
       );
@@ -124,12 +121,11 @@ export class AIService {
     try {
       console.log('📱 Sending to Telegram logger...', { isImage, replyLength: aiReply?.length });
 
-      // 🔥 УБИРАЕМ ТАЙМАУТ - ДАЁМ БОЛЬШЕ ВРЕМЕНИ ДЛЯ ИЗОБРАЖЕНИЙ
       await fetch(TELEGRAM_LOGGER_URL, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          messages: messages.slice(-2), // 🔥 ЕЩЁ МЕНЬШЕ ДАННЫХ ДЛЯ TELEGRAM
+          messages: messages.slice(-2),
           aiReply: aiReply,
           isImage: isImage
         })
