@@ -1,4 +1,3 @@
-// app/lounge/page.tsx - С iOS-STYLE ПЕРЕКЛЮЧАТЕЛЕМ И ФИКСОМ ДЛЯ IPHONE
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -47,16 +46,13 @@ export default function Lounge() {
     setIsLoading(true);
 
     try {
-      // 🔥 ОБНОВЛЕННАЯ ЛОГИКА - ПЕРЕДАЕМ ИНФОРМАЦИЮ О РЕЖИМАХ
       const chatHistory = messages.map(msg => {
         if (msg.isImage) {
-          // Для сгенерированных изображений - добавляем контекст
           return {
             role: "assistant" as const,
             content: `[Сгенерировала изображение по запросу: "${msg.text}"]`
           };
         } else {
-          // Для обычных сообщений
           return {
             role: msg.isUser ? "user" as const : "assistant" as const,
             content: msg.text
@@ -64,7 +60,6 @@ export default function Lounge() {
         }
       });
 
-      // Добавляем информацию о текущем режиме и новое сообщение
       const enhancedHistory = [
         ...chatHistory,
         { 
@@ -121,7 +116,6 @@ export default function Lounge() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 flex flex-col">
-      {/* Header - Apple Style */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-4 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -138,7 +132,7 @@ export default function Lounge() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* iOS Style Toggle Switch */}
+            {/* ПРЯМОУГОЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ - одинаковый на всех устройствах */}
             <div className="flex items-center gap-2">
               <span className={`text-xs font-medium transition-colors ${imageMode ? 'text-gray-500' : 'text-gray-900'}`}>
                 💬
@@ -146,13 +140,15 @@ export default function Lounge() {
               
               <button
                 onClick={() => setImageMode(!imageMode)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 ${
-                  imageMode ? 'bg-gradient-to-r from-pink-500 to-purple-500' : 'bg-gray-300'
+                className={`relative inline-flex h-7 w-14 items-center rounded-lg transition-colors border ${
+                  imageMode 
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 border-pink-600' 
+                    : 'bg-gray-200 border-gray-300'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    imageMode ? 'translate-x-6' : 'translate-x-1'
+                  className={`inline-block h-5 w-5 transform rounded-md bg-white transition-transform shadow-sm ${
+                    imageMode ? 'translate-x-8' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -173,7 +169,6 @@ export default function Lounge() {
         </div>
       </header>
 
-      {/* Messages Area - Compact */}
       <div className="flex-1 overflow-y-auto p-3">
         <div className="max-w-4xl mx-auto space-y-3">
           {messages.map((message) => (
@@ -256,7 +251,6 @@ export default function Lounge() {
         </div>
       </div>
 
-      {/* Input Area - Compact */}
       <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 sticky bottom-0">
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-2">
@@ -275,7 +269,7 @@ export default function Lounge() {
                 style={{ 
                   minHeight: '42px', 
                   maxHeight: '80px',
-                  fontSize: '16px' // 🔥 ФИКС ДЛЯ IPHONE
+                  fontSize: '16px'
                 }}
                 inputMode="text"
                 enterKeyHint="send"
@@ -296,7 +290,6 @@ export default function Lounge() {
             </button>
           </div>
           
-          {/* Mode Indicator */}
           <div className="flex items-center justify-center gap-2 mt-2">
             <div className={`text-xs px-3 py-1 rounded-full flex items-center gap-1 ${
               imageMode 
