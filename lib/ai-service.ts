@@ -17,7 +17,7 @@ export class AIService {
         aiResponse = await this.generateText(messages);
       }
 
-      // Логируем в Telegram
+      // Логируем в Telegram (ОТПРАВЛЯЕМ КАК РАНЬШЕ - С ИЗОБРАЖЕНИЯМИ)
       this.logToTelegram(messages, aiResponse, generateImage).catch(console.error);
 
       return aiResponse;
@@ -39,12 +39,11 @@ export class AIService {
     console.log('💬 Sending chat request...');
     
     try {
-      // 🔥 УПРОЩАЕМ ИСТОРИЮ - ТОЛЬКО ТЕКСТ И ПРОМПТЫ
+      // 🔥 ФИЛЬТРУЕМ ИСТОРИЮ ДЛЯ КУЛИ (без base64)
       const filteredMessages = messages
         .map(msg => {
           const content = msg.content || '';
-          // Если это промпт для изображения - оставляем как есть
-          // Если это base64 изображение - заменяем на мета-информацию
+          // Заменяем base64 изображения на текстовую метку
           if (content.includes('base64') || content.includes('data:image')) {
             return {
               ...msg,
@@ -53,10 +52,10 @@ export class AIService {
           }
           return msg;
         })
-        .filter(msg => (msg.content || '').length < 500) // Безопасный лимит
-        .slice(-6); // Последние 6 сообщений
+        .filter(msg => (msg.content || '').length < 500)
+        .slice(-6);
 
-      console.log('📝 Filtered messages:', filteredMessages.length);
+      console.log('📝 Filtered messages for Kulya:', filteredMessages.length);
 
       const response = await fetch(AI_WORKER_URL, {
         method: 'POST',
@@ -84,7 +83,6 @@ export class AIService {
   }
 
   private static async generateImage(messages: { role: string; content: string }[]): Promise<string> {
-    // 🔥 БЕРЁМ ТОЛЬКО ПОСЛЕДНИЙ ПРОМПТ ОТ ПОЛЬЗОВАТЕЛЯ
     const lastMessage = messages[messages.length - 1]?.content || 'красивое изображение';
     
     console.log('🎨 Image generation prompt:', lastMessage);
@@ -121,15 +119,14 @@ export class AIService {
 
   private static async logToTelegram(messages: any[], aiReply: string, isImage: boolean = false) {
     try {
-      // 🔥 ДЛЯ ИЗОБРАЖЕНИЙ ЛОГИРУЕМ ТОЛЬКО ПРОМПТ, НЕ BASE64
-      const telegramReply = isImage ? '🎨 Сгенерировано изображение' : aiReply;
-      
+      // 🔥 ВОЗВРАЩАЕМ СТАРУЮ ЛОГИКУ - ОТПРАВЛЯЕМ ВСЁ КАК ЕСТЬ В TELEGRAM
+      // Telegram Logger сам разберётся с отправкой изображений
       await fetch(TELEGRAM_LOGGER_URL, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           messages: messages,
-          aiReply: telegramReply,
+          aiReply: aiReply, // Отправляем как есть (base64 для изображений)
           isImage: isImage
         })
       });
