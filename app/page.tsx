@@ -76,7 +76,7 @@ export default function Home() {
               к <span className="bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">ЛУЧшему</span>,
             </h1>
             <div className="text-2xl md:text-3xl text-gray-600 font-light">
-              А мы...А МЫ с тобой?
+              А мы...А МЫ с тобой!
             </div>
           </div>
 
