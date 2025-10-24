@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 // Типы для данных
-interface YandexStats {
+interface Stats {
   success: boolean;
   todayVisitors: number;
   totalVisitors: number;
@@ -24,7 +24,7 @@ export default function Home() {
   });
 
   const [visitors, setVisitors] = useState(0);
-  const [yandexStats, setYandexStats] = useState<YandexStats | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,26 +43,26 @@ export default function Home() {
       });
     }, 1000);
 
-    // Яндекс.Метрика статистика
-    const fetchYandexStats = async () => {
+    // Статистика
+    const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/yandex-stats');
-        const data: YandexStats = await response.json();
-        setYandexStats(data);
+        const response = await fetch('/api/stats');
+        const data: Stats = await response.json();
+        setStats(data);
         setVisitors(data.totalVisitors);
       } catch (error) {
-        console.error('Yandex stats error:', error);
-        setVisitors(1568);
+        console.error('Stats error:', error);
+        setVisitors(0);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchYandexStats();
+    fetchStats();
 
     // Обновляем каждые 2 минуты
-    const statsInterval = setInterval(fetchYandexStats, 2 * 60 * 1000);
+    const statsInterval = setInterval(fetchStats, 2 * 60 * 1000);
     
     return () => {
       clearInterval(timer);
@@ -135,10 +135,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК Яндекс.Метрики */}
+          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК СТАТИСТИКИ */}
           <div className="mb-12">
             <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              {loading ? 'Загрузка...' : 'Статистика Яндекс.Метрики'}
+              {loading ? 'Загрузка...' : 'Статистика'}
             </div>
             
             {loading ? (
@@ -146,17 +146,17 @@ export default function Home() {
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
                 <span className="text-sm text-gray-500">Загрузка...</span>
               </div>
-            ) : yandexStats && (
+            ) : stats && (
               <>
                 <div className="text-2xl font-light text-gray-900 mb-2">
-                  {yandexStats.totalVisitors.toLocaleString()}
+                  {stats.totalVisitors.toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-400 space-y-1">
-                  <div className="text-green-600">+{yandexStats.todayVisitors} визитов сегодня</div>
-                  <div>{yandexStats.uniqueVisitors.toLocaleString()} уникальных</div>
-                  <div>{yandexStats.pageViews} просмотров</div>
-                  <div className="text-blue-500 text-xs">🟢 {yandexStats.online} онлайн</div>
-                  <div className="text-xs text-purple-500">{yandexStats.message}</div>
+                  <div className="text-green-600">+{stats.todayVisitors} визитов сегодня</div>
+                  <div>{stats.uniqueVisitors.toLocaleString()} уникальных</div>
+                  <div>{stats.pageViews} просмотров</div>
+                  <div className="text-blue-500 text-xs">🟢 {stats.online} онлайн</div>
+                  <div className="text-xs text-purple-500">{stats.message}</div>
                   <div className="text-xs">[бЭтка 5.2 от 2025.10.24~го]</div>
                 </div>
               </>
