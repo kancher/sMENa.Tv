@@ -10,6 +10,7 @@ type Message = {
   isUser: boolean;
   timestamp: Date;
   isError?: boolean;
+  isImage?: boolean;
 };
 
 export default function Lounge() {
@@ -23,6 +24,7 @@ export default function Lounge() {
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [imageMode, setImageMode] = useState(false); // Новое состояние для режима изображений
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,13 +57,14 @@ export default function Lounge() {
         { role: "user", content: inputText }
       ];
 
-      const aiResponse = await AIService.getResponse(chatHistory);
+      const aiResponse = await AIService.getResponse(chatHistory, imageMode);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: aiResponse,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        isImage: imageMode // Помечаем если это изображение
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -96,6 +99,7 @@ export default function Lounge() {
         timestamp: new Date()
       }
     ]);
+    setImageMode(false); // Сбрасываем режим изображений
   };
 
   return (
@@ -115,6 +119,18 @@ export default function Lounge() {
           </div>
           
           <div className="flex items-center gap-3">
+            {/* Переключатель режима изображений */}
+            <button
+              onClick={() => setImageMode(!imageMode)}
+              className={`px-4 py-2 rounded-lg transition-all ${
+                imageMode 
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {imageMode ? '🎨 Режим изображений' : '💬 Режим общения'}
+            </button>
+            
             {/* Кнопка очистки чата */}
             <button
               onClick={clearChat}
@@ -141,18 +157,41 @@ export default function Lounge() {
                     ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
                     : message.isError
                     ? 'bg-red-50 border border-red-200 text-red-800'
+                    : message.isImage
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white' // Стиль для изображений
                     : 'bg-white border border-gray-200 text-gray-800 shadow-sm'
                 }`}
               >
-                <div className="whitespace-pre-wrap leading-relaxed">
-                  {message.text}
-                </div>
+                {message.isImage ? (
+                  // Отображение изображения
+                  <div className="text-center">
+                    <div className="text-sm mb-2">🎨 Куля создала изображение:</div>
+                    <img 
+                      src={message.text} 
+                      alt="Сгенерированное изображение" 
+                      className="max-w-full h-auto rounded-lg mx-auto"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <div className="text-xs mt-2 text-white/80">
+                      Нажмите на изображение чтобы открыть в полном размере
+                    </div>
+                  </div>
+                ) : (
+                  // Обычное текстовое сообщение
+                  <div className="whitespace-pre-wrap leading-relaxed">
+                    {message.text}
+                  </div>
+                )}
                 <div
                   className={`text-xs mt-2 ${
                     message.isUser 
                       ? 'text-cyan-100' 
                       : message.isError
                       ? 'text-red-400'
+                      : message.isImage
+                      ? 'text-white/80'
                       : 'text-gray-400'
                   }`}
                 >
@@ -161,7 +200,7 @@ export default function Lounge() {
                     minute: '2-digit'
                   })}
                   {!message.isUser && !message.isError && (
-                    <span className="ml-2">• Куля</span>
+                    <span className="ml-2">• Куля {message.isImage ? '🎨' : '💬'}</span>
                   )}
                 </div>
               </div>
@@ -179,7 +218,7 @@ export default function Lounge() {
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <span className="text-sm text-gray-500">
-                    Алиса думает... 💬
+                    {imageMode ? '🎨 Куля рисует...' : '💬 Куля думает...'}
                   </span>
                 </div>
               </div>
@@ -197,9 +236,13 @@ export default function Lounge() {
             <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 focus-within:border-cyan-500 transition-colors">
               <textarea
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                onChange={(e) => setInputText(e.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Не надо стеснятся 💁‍♀️ ..."
+                placeholder={
+                  imageMode 
+                    ? 'Опиши что нарисовать... (например: "космонавт с котом в космосе")' 
+                    : 'Не надо стеснятся 💁‍♀️ ...'
+                }
                 className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
                 rows={1}
                 style={{ minHeight: '48px', maxHeight: '120px' }}
@@ -208,17 +251,29 @@ export default function Lounge() {
             <button
               onClick={handleSendMessage}
               disabled={!inputText.trim() || isLoading}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-6 rounded-2xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[100px]"
+              className={`px-6 rounded-2xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[100px] ${
+                imageMode 
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white' 
+                  : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+              }`}
             >
-              {isLoading ? '...' : '➤'}
+              {isLoading ? '...' : imageMode ? '🎨' : '➤'}
             </button>
           </div>
           
           {/* Подсказка */}
           <div className="text-center mt-3">
-            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              💬 Режим общения
-              {isLoading && ' • Куля печатает...'}
+            <span className={`text-xs px-3 py-1 rounded-full ${
+              imageMode 
+                ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white' 
+                : 'text-gray-500 bg-gray-100'
+            }`}>
+              {imageMode ? '🎨 Режим изображений' : '💬 Режим общения'}
+              {isLoading && (
+                <span className="ml-2">
+                  {imageMode ? '• Куля рисует...' : '• Куля печатает...'}
+                </span>
+              )}
             </span>
           </div>
         </div>
