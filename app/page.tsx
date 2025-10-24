@@ -1,15 +1,15 @@
-// app/page.tsx - ФИНАЛЬНЫЙ APPLE-STYLE DESIGN
 'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 // Типы для данных
-interface VisitorStats {
+interface YandexStats {
   success: boolean;
+  todayVisitors: number;
   totalVisitors: number;
   uniqueVisitors: number;
-  todayVisitors: number;
+  pageViews: number;
   online: number;
   lastUpdated: string;
   message?: string;
@@ -24,7 +24,7 @@ export default function Home() {
   });
 
   const [visitors, setVisitors] = useState(0);
-  const [visitorStats, setVisitorStats] = useState<VisitorStats | null>(null);
+  const [yandexStats, setYandexStats] = useState<YandexStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,32 +43,26 @@ export default function Home() {
       });
     }, 1000);
 
-    // 🔥 РЕАЛЬНЫЙ СЧЁТЧИК ПОСЕТИТЕЛЕЙ
-    const fetchVisitorStats = async () => {
+    // Яндекс.Метрика статистика
+    const fetchYandexStats = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Loading visitor stats...');
-        
-        const response = await fetch('/api/visitors');
-        const data: VisitorStats = await response.json();
-        
-        setVisitorStats(data);
+        const response = await fetch('/api/yandex-stats');
+        const data: YandexStats = await response.json();
+        setYandexStats(data);
         setVisitors(data.totalVisitors);
-        console.log('✅ Stats loaded:', data);
-        
       } catch (error) {
-        console.error('❌ Failed to load stats:', error);
-        // Fallback
+        console.error('Yandex stats error:', error);
         setVisitors(1568);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVisitorStats();
-    
+    fetchYandexStats();
+
     // Обновляем каждые 2 минуты
-    const statsInterval = setInterval(fetchVisitorStats, 2 * 60 * 1000);
+    const statsInterval = setInterval(fetchYandexStats, 2 * 60 * 1000);
     
     return () => {
       clearInterval(timer);
@@ -141,10 +135,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Version Info under Counter */}
+          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК Яндекс.Метрики */}
           <div className="mb-12">
             <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              {loading ? 'Загрузка...' : 'Посетителей сегодня'}
+              {loading ? 'Загрузка...' : 'Статистика Яндекс.Метрики'}
             </div>
             
             {loading ? (
@@ -152,23 +146,17 @@ export default function Home() {
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
                 <span className="text-sm text-gray-500">Загрузка...</span>
               </div>
-            ) : (
+            ) : yandexStats && (
               <>
                 <div className="text-2xl font-light text-gray-900 mb-2">
-                  {visitors.toLocaleString()}
+                  {yandexStats.totalVisitors.toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-400 space-y-1">
-                  {visitorStats && visitorStats.success ? (
-                    <>
-                      <div>+{visitorStats.todayVisitors} сегодня</div>
-                      <div>{visitorStats.uniqueVisitors.toLocaleString()} уникальных</div>
-                      <div className="text-green-600 text-xs font-medium">
-                        🎯 Реальный счётчик - обновите страницу!
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-orange-500 text-xs">⚠️ Используются тестовые данные</div>
-                  )}
+                  <div className="text-green-600">+{yandexStats.todayVisitors} визитов сегодня</div>
+                  <div>{yandexStats.uniqueVisitors.toLocaleString()} уникальных</div>
+                  <div>{yandexStats.pageViews} просмотров</div>
+                  <div className="text-blue-500 text-xs">🟢 {yandexStats.online} онлайн</div>
+                  <div className="text-xs text-purple-500">{yandexStats.message}</div>
                   <div className="text-xs">[бЭтка 5.2 от 2025.10.24~го]</div>
                 </div>
               </>
