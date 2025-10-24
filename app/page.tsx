@@ -1,8 +1,20 @@
-// app/page.tsx - ФИНАЛЬНЫЙ APPLE-STYLE DESIGN
+// app/page.tsx - С CLOUDFLARE ANALYTICS
 'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
+// Типы для данных Cloudflare Analytics
+interface VisitorStats {
+  success: boolean;
+  totalVisitors: number;
+  uniqueVisitors: number;
+  todayVisitors: number;
+  bandwidth: number;
+  requests: number;
+  lastUpdated: string;
+  message?: string;
+}
 
 export default function Home() {
   const [timeLeft, setTimeLeft] = useState({
@@ -13,6 +25,8 @@ export default function Home() {
   });
 
   const [visitors, setVisitors] = useState(0);
+  const [visitorStats, setVisitorStats] = useState<VisitorStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Счётчик до 4 ноября 2025
@@ -30,10 +44,37 @@ export default function Home() {
       });
     }, 1000);
 
-    // Имитация счётчика посещений
-    setVisitors(1247 + Math.floor(Math.random() * 100));
+    // 🔥 ЗАГРУЗКА СТАТИСТИКИ CLOUDFLARE
+    const fetchCloudflareStats = async () => {
+      try {
+        setLoading(true);
+        console.log('🔄 Fetching visitor stats...');
+        
+        const response = await fetch('/api/cloudflare-stats');
+        const data: VisitorStats = await response.json();
+        
+        setVisitorStats(data);
+        setVisitors(data.totalVisitors);
+        console.log('✅ Stats loaded:', data);
+        
+      } catch (error) {
+        console.error('❌ Failed to load stats:', error);
+        // Используем fallback данные
+        setVisitors(1342);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearInterval(timer);
+    fetchCloudflareStats();
+    
+    // Обновляем статистику каждые 5 минут
+    const statsInterval = setInterval(fetchCloudflareStats, 5 * 60 * 1000);
+    
+    return () => {
+      clearInterval(timer);
+      clearInterval(statsInterval);
+    };
   }, []);
 
   return (
@@ -101,17 +142,38 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Version Info under Counter */}
+          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК СТАТИСТИКИ CLOUDFLARE */}
           <div className="mb-12">
             <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Посетителей сегодня
+              {loading ? 'Загрузка статистики...' : 'Посетителей сегодня'}
             </div>
-            <div className="text-2xl font-light text-gray-900 mb-2">
-              {visitors.toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-400">
-              [бЭтка 5.2 от 2025.10.24~го]
-            </div>
+            
+            {loading ? (
+              <div className="flex justify-center items-center gap-2 py-4">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
+                <span className="text-sm text-gray-500">Загрузка...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-light text-gray-900 mb-2">
+                  {visitors.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-400 space-y-1">
+                  {visitorStats && visitorStats.success ? (
+                    <>
+                      <div>+{visitorStats.todayVisitors} сегодня</div>
+                      <div>{visitorStats.uniqueVisitors.toLocaleString()} уникальных</div>
+                    </>
+                  ) : (
+                    <>
+                      <div>Реальные данные скоро появятся</div>
+                      <div className="text-orange-500 text-xs">⚠️ Тестовый режим</div>
+                    </>
+                  )}
+                  <div className="text-xs">[бЭтка 5.2 от 2025.10.24~го]</div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Single CTA Button */}
