@@ -158,24 +158,29 @@ export default function Lounge() {
                 {message.isImage ? (
                   <div className="text-center">
                     <div className="text-sm mb-2">🎨 Куля создала изображение:</div>
-                    {message.text.startsWith('data:image/') ? (
+                    {message.text && typeof message.text === 'string' && (message.text.startsWith('data:image/') || message.text.includes('base64')) ? (
                       <img 
                         src={message.text} 
                         alt="Сгенерированное изображение" 
-                        className="max-w-full h-auto rounded-lg mx-auto"
+                        className="max-w-full h-auto rounded-lg mx-auto max-h-64"
                         onError={(e) => {
+                          console.error('Image load error');
                           e.currentTarget.style.display = 'none';
+                          const errorDiv = e.currentTarget.parentNode?.querySelector('.image-error');
+                          if (errorDiv) {
+                            (errorDiv as HTMLDivElement).textContent = '❌ Не удалось загрузить изображение';
+                          }
                         }}
                       />
                     ) : (
-                      <div className="text-white/80">
-                        {message.text}
+                      <div className="text-white/80 bg-white/20 p-4 rounded-lg">
+                        {typeof message.text === 'string' ? message.text : 'Изображение в процессе генерации...'}
                       </div>
                     )}
-                    <div className="text-xs mt-2 text-white/80">
-                      {message.text.startsWith('data:image/') 
+                    <div className="text-xs mt-2 text-white/80 image-error">
+                      {message.text && typeof message.text === 'string' && message.text.startsWith('data:image/') 
                         ? 'Нажмите на изображение чтобы открыть в полном размере' 
-                        : 'Изображение в процессе генерации...'}
+                        : 'Ожидание генерации...'}
                     </div>
                   </div>
                 ) : (
