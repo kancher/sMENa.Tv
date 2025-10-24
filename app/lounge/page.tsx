@@ -236,7 +236,7 @@ export default function Lounge() {
             <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 focus-within:border-cyan-500 transition-colors">
               <textarea
                 value={inputText}
-                onChange={(e) => setInputText(e.value)}
+                onChange={(e) => setInputText(e.target.value)} {/* ИСПРАВЛЕНО ЗДЕСЬ */}
                 onKeyPress={handleKeyPress}
                 placeholder={
                   imageMode 
