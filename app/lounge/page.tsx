@@ -54,7 +54,8 @@ export default function Lounge() {
         { role: "user", content: inputText }
       ];
 
-      const aiResponse = await AIService.getResponse(chatHistory);
+      // 👇 ВАЖНО: передаём imageMode как второй параметр
+      const aiResponse = await AIService.getResponse(chatHistory, imageMode);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -157,16 +158,24 @@ export default function Lounge() {
                 {message.isImage ? (
                   <div className="text-center">
                     <div className="text-sm mb-2">🎨 Куля создала изображение:</div>
-                    <img 
-                      src={message.text} 
-                      alt="Сгенерированное изображение" 
-                      className="max-w-full h-auto rounded-lg mx-auto"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
+                    {message.text.startsWith('data:image/') ? (
+                      <img 
+                        src={message.text} 
+                        alt="Сгенерированное изображение" 
+                        className="max-w-full h-auto rounded-lg mx-auto"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="text-white/80">
+                        {message.text}
+                      </div>
+                    )}
                     <div className="text-xs mt-2 text-white/80">
-                      Нажмите на изображение чтобы открыть в полном размере
+                      {message.text.startsWith('data:image/') 
+                        ? 'Нажмите на изображение чтобы открыть в полном размере' 
+                        : 'Изображение в процессе генерации...'}
                     </div>
                   </div>
                 ) : (
