@@ -1,17 +1,16 @@
-// app/page.tsx - С CLOUDFLARE ANALYTICS
+// app/page.tsx - С РЕАЛЬНЫМ СЧЁТЧИКОМ
 'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-// Типы для данных Cloudflare Analytics
+// Типы для данных
 interface VisitorStats {
   success: boolean;
   totalVisitors: number;
   uniqueVisitors: number;
   todayVisitors: number;
-  bandwidth: number;
-  requests: number;
+  online: number;
   lastUpdated: string;
   message?: string;
 }
@@ -44,32 +43,32 @@ export default function Home() {
       });
     }, 1000);
 
-    // 🔥 ЗАГРУЗКА СТАТИСТИКИ CLOUDFLARE
-    const fetchCloudflareStats = async () => {
+    // 🔥 РЕАЛЬНЫЙ СЧЁТЧИК ПОСЕТИТЕЛЕЙ
+    const fetchRealStats = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Fetching visitor stats...');
+        console.log('🔄 Loading real visitor stats...');
         
-        const response = await fetch('/api/simple-stats');
+        const response = await fetch('/api/real-stats');
         const data: VisitorStats = await response.json();
         
         setVisitorStats(data);
         setVisitors(data.totalVisitors);
-        console.log('✅ Stats loaded:', data);
+        console.log('✅ Real stats loaded:', data);
         
       } catch (error) {
-        console.error('❌ Failed to load stats:', error);
-        // Используем fallback данные
-        setVisitors(1342);
+        console.error('❌ Failed to load real stats:', error);
+        // Fallback
+        setVisitors(0);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCloudflareStats();
+    fetchRealStats();
     
-    // Обновляем статистику каждые 5 минут
-    const statsInterval = setInterval(fetchCloudflareStats, 5 * 60 * 1000);
+    // Обновляем каждые 2 минуты
+    const statsInterval = setInterval(fetchRealStats, 2 * 60 * 1000);
     
     return () => {
       clearInterval(timer);
@@ -142,10 +141,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК СТАТИСТИКИ CLOUDFLARE */}
+          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК С РЕАЛЬНЫМ СЧЁТЧИКОМ */}
           <div className="mb-12">
             <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              {loading ? 'Загрузка статистики...' : 'Посетителей сегодня'}
+              {loading ? 'Загрузка...' : 'Посетителей сегодня'}
             </div>
             
             {loading ? (
@@ -161,14 +160,16 @@ export default function Home() {
                 <div className="text-sm text-gray-400 space-y-1">
                   {visitorStats && visitorStats.success ? (
                     <>
-                      <div>+{visitorStats.todayVisitors} сегодня</div>
+                      <div className="text-green-600 font-medium">
+                        +{visitorStats.todayVisitors} сегодня
+                      </div>
                       <div>{visitorStats.uniqueVisitors.toLocaleString()} уникальных</div>
+                      <div className="text-xs text-blue-500">
+                        {visitorStats.message}
+                      </div>
                     </>
                   ) : (
-                    <>
-                      <div>Реальные данные скоро появятся</div>
-                      <div className="text-orange-500 text-xs">⚠️ Тестовый режим</div>
-                    </>
+                    <div className="text-orange-500">Загрузка реальных данных...</div>
                   )}
                   <div className="text-xs">[бЭтка 5.2 от 2025.10.24~го]</div>
                 </div>
