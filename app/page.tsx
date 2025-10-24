@@ -1,4 +1,4 @@
-// app/page.tsx - APPLE-STYLE DESIGN
+// app/page.tsx - УЛУЧШЕННЫЙ APPLE-STYLE DESIGN
 'use client';
 
 import Link from 'next/link';
@@ -30,7 +30,7 @@ export default function Home() {
       });
     }, 1000);
 
-    // Имитация счётчика посещений (в реальном проекте брать из аналитики)
+    // Имитация счётчика посещений
     setVisitors(1247 + Math.floor(Math.random() * 100));
 
     return () => clearInterval(timer);
@@ -42,7 +42,21 @@ export default function Home() {
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-6 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg"></div>
+            <img 
+              src="/images/logo.png" 
+              alt="sMeNa.Tv" 
+              className="w-8 h-8"
+              onError={(e) => {
+                // Fallback если лого не загрузится
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'block';
+              }}
+            />
+            <div 
+              className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg hidden"
+              style={{ display: 'none' }}
+            ></div>
             <span className="text-xl font-semibold text-gray-900">sMeNa.Tv</span>
           </div>
           
@@ -53,12 +67,6 @@ export default function Home() {
             >
               Гостиная
             </Link>
-            <button className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
-              О проекте
-            </button>
-            <button className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
-              Контакты
-            </button>
           </nav>
         </div>
       </header>
@@ -71,10 +79,10 @@ export default function Home() {
             <h1 className="text-5xl md:text-7xl font-light text-gray-900 mb-6 leading-tight">
               МЕНЯЙся
               <br />
-              к <span className="bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">ЛУЧШЕМУ</span>,
+              к <span className="bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">ЛУЧшему</span>,
             </h1>
             <div className="text-2xl md:text-3xl text-gray-600 font-light">
-              А МЫ...А Мы с тобой?
+              А мы...А МЫ с тобой?!
             </div>
           </div>
 
@@ -99,28 +107,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16 max-w-2xl mx-auto">
-            <div className="text-center p-6 rounded-2xl bg-white/50 backdrop-blur-sm border border-gray-200/50">
-              <div className="text-2xl mb-3">🎬</div>
-              <h3 className="font-medium text-gray-900 mb-2">Прямые эфиры</h3>
-              <p className="text-sm text-gray-600">Интерактивные трансляции и общение</p>
-            </div>
-            
-            <div className="text-center p-6 rounded-2xl bg-white/50 backdrop-blur-sm border border-gray-200/50">
-              <div className="text-2xl mb-3">✨</div>
-              <h3 className="font-medium text-gray-900 mb-2">Коллаборации</h3>
-              <p className="text-sm text-gray-600">Совместное творчество и проекты</p>
-            </div>
-            
-            <div className="text-center p-6 rounded-2xl bg-white/50 backdrop-blur-sm border border-gray-200/50">
-              <div className="text-2xl mb-3">💫</div>
-              <h3 className="font-medium text-gray-900 mb-2">Открытый микрофон</h3>
-              <p className="text-sm text-gray-600">Каждый может стать создателем</p>
-            </div>
-          </div>
-
-          {/* CTA Button */}
+          {/* CTA Buttons */}
           <div className="flex gap-4 justify-center">
             <Link 
               href="/lounge"
@@ -141,12 +128,22 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-center md:text-left">
               <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
-                <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-cyan-500 rounded"></div>
+                <img 
+                  src="/images/logo.png" 
+                  alt="sMeNa.Tv" 
+                  className="w-6 h-6"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'block';
+                  }}
+                />
+                <div 
+                  className="w-6 h-6 bg-gradient-to-r from-purple-500 to-cyan-500 rounded hidden"
+                  style={{ display: 'none' }}
+                ></div>
                 <span className="font-semibold text-gray-900">sMeNa.Tv</span>
               </div>
-              <p className="text-sm text-gray-600">
-                Народное телевидение • Запуск 4 ноября 2025
-              </p>
             </div>
             
             {/* Visitors Counter */}
@@ -160,20 +157,7 @@ export default function Home() {
             </div>
             
             <div className="text-center md:text-right">
-              <p className="text-sm text-gray-600">
-                Следи за обновлениями
-              </p>
-              <div className="flex gap-4 justify-center md:justify-end mt-2">
-                <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <span className="text-lg">📱</span>
-                </button>
-                <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <span className="text-lg">💬</span>
-                </button>
-                <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <span className="text-lg">📧</span>
-                </button>
-              </div>
+              {/* Оставлено пустое место для будущих элементов */}
             </div>
           </div>
         </div>
