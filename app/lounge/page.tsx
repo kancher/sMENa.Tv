@@ -1,4 +1,4 @@
-// app/lounge/page.tsx - КОМПАКТНЫЙ APPLE-STYLE DESIGN С КОНТЕКСТОМ РЕЖИМОВ
+// app/lounge/page.tsx - С iOS-STYLE ПЕРЕКЛЮЧАТЕЛЕМ
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -137,17 +137,30 @@ export default function Lounge() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setImageMode(!imageMode)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                imageMode 
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {imageMode ? '🎨' : '💬'}
-            </button>
+          <div className="flex items-center gap-3">
+            {/* iOS Style Toggle Switch */}
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-medium transition-colors ${imageMode ? 'text-gray-500' : 'text-gray-900'}`}>
+                💬
+              </span>
+              
+              <button
+                onClick={() => setImageMode(!imageMode)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 ${
+                  imageMode ? 'bg-gradient-to-r from-pink-500 to-purple-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    imageMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              
+              <span className={`text-xs font-medium transition-colors ${imageMode ? 'text-gray-900' : 'text-gray-500'}`}>
+                🎨
+              </span>
+            </div>
             
             <button
               onClick={clearChat}
@@ -278,14 +291,15 @@ export default function Lounge() {
           </div>
           
           {/* Mode Indicator */}
-          <div className="text-center mt-2">
-            <span className={`text-xs px-2 py-1 rounded-full ${
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className={`text-xs px-3 py-1 rounded-full flex items-center gap-1 ${
               imageMode 
                 ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white' 
                 : 'text-gray-500 bg-gray-100'
             }`}>
-              {imageMode ? 'Режим изображений' : 'Режим общения'}
-            </span>
+              <span>{imageMode ? '🎨' : '💬'}</span>
+              <span>{imageMode ? 'Режим изображений' : 'Режим общения'}</span>
+            </div>
           </div>
         </div>
       </div>
