@@ -1,4 +1,4 @@
-// app/lounge/page.tsx - С iOS-STYLE ПЕРЕКЛЮЧАТЕЛЕМ
+// app/lounge/page.tsx - С iOS-STYLE ПЕРЕКЛЮЧАТЕЛЕМ И ФИКСОМ ДЛЯ IPHONE
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -272,7 +272,13 @@ export default function Lounge() {
                 }
                 className="w-full bg-transparent border-none resize-none py-2.5 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
                 rows={1}
-                style={{ minHeight: '42px', maxHeight: '80px' }}
+                style={{ 
+                  minHeight: '42px', 
+                  maxHeight: '80px',
+                  fontSize: '16px' // 🔥 ФИКС ДЛЯ IPHONE
+                }}
+                inputMode="text"
+                enterKeyHint="send"
               />
             </div>
             <button
