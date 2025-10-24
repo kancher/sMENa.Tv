@@ -1,4 +1,5 @@
 import './globals.css'
+import YandexMetrika from '../components/YandexMetrika'
 
 export const metadata = {
   title: 'sMeNa.Tv',
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="ru">
       <body className="antialiased">
         {children}
+        <YandexMetrika />
       </body>
     </html>
   )
