@@ -135,32 +135,80 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 🔥 ОБНОВЛЁННЫЙ БЛОК СТАТИСТИКИ */}
-          <div className="mb-12">
-            <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              {loading ? 'Загрузка...' : 'Статистика'}
-            </div>
-            
-            {loading ? (
-              <div className="flex justify-center items-center gap-2 py-4">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
-                <span className="text-sm text-gray-500">Загрузка...</span>
+          {/* 🔥 КРАСИВОЕ ОКОШКО СТАТИСТИКИ APPLE-STYLE */}
+          <div className="mb-12 flex justify-center">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-sm hover:shadow-md transition-all duration-300 w-80">
+              {/* Заголовок */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <h3 className="text-sm font-medium text-gray-900">Аналитика</h3>
+                </div>
+                <div className="text-xs text-gray-500">
+                  {loading ? '🔄' : '📊'}
+                </div>
               </div>
-            ) : stats && (
-              <>
-                <div className="text-2xl font-light text-gray-900 mb-2">
-                  {stats.totalVisitors.toLocaleString()}
+
+              {/* Основные метрики */}
+              <div className="space-y-4">
+                {/* Общее число */}
+                <div className="text-center">
+                  <div className="text-3xl font-light text-gray-900 mb-1">
+                    {loading ? (
+                      <div className="h-8 bg-gray-200 rounded-lg animate-pulse"></div>
+                    ) : (
+                      stats?.totalVisitors.toLocaleString() || '0'
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">всего визитов</div>
                 </div>
-                <div className="text-sm text-gray-400 space-y-1">
-                  <div className="text-green-600">+{stats.todayVisitors} визитов сегодня</div>
-                  <div>{stats.uniqueVisitors.toLocaleString()} уникальных</div>
-                  <div>{stats.pageViews} просмотров</div>
-                  <div className="text-blue-500 text-xs">🟢 {stats.online} онлайн</div>
-                  <div className="text-xs text-purple-500">{stats.message}</div>
-                  <div className="text-xs">[бЭтка 5.2 от 2025.10.24~го]</div>
+
+                {/* Детальная статистика */}
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-lg font-medium text-gray-900">
+                      {loading ? '—' : stats?.todayVisitors || '0'}
+                    </div>
+                    <div className="text-xs text-gray-500">сегодня</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-lg font-medium text-gray-900">
+                      {loading ? '—' : stats?.uniqueVisitors.toLocaleString() || '0'}
+                    </div>
+                    <div className="text-xs text-gray-500">уникальных</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-lg font-medium text-gray-900">
+                      {loading ? '—' : stats?.pageViews || '0'}
+                    </div>
+                    <div className="text-xs text-gray-500">просмотров</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-lg font-medium text-gray-900 flex items-center justify-center gap-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      {loading ? '—' : stats?.online || '0'}
+                    </div>
+                    <div className="text-xs text-gray-500">онлайн</div>
+                  </div>
                 </div>
-              </>
-            )}
+
+                {/* Статус */}
+                <div className="text-center pt-2 border-t border-gray-100">
+                  <div className="text-xs text-gray-500">
+                    {loading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-transparent"></div>
+                        Загрузка...
+                      </div>
+                    ) : (
+                      <span className="text-purple-600 font-medium">
+                        {stats?.message || '📊 Статистика готовится'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Single CTA Button */}
