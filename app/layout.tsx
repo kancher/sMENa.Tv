@@ -1,5 +1,6 @@
 import './globals.css'
 import YandexMetrika from '../components/YandexMetrika'
+import GoogleAnalytics from '../components/GoogleAnalytics'
 
 export const metadata = {
   title: 'sMeNa.Tv',
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body className="antialiased">
         {children}
         <YandexMetrika />
+        <GoogleAnalytics />
       </body>
     </html>
   )
