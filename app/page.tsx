@@ -4,21 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const [visitors, setVisitors] = useState(12547);
-  const [online, setOnline] = useState(42);
   const [showLicensePanel, setShowLicensePanel] = useState(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVisitors(prev => prev + Math.floor(Math.random() * 3));
-      setOnline(prev => {
-        const change = Math.floor(Math.random() * 5) - 2;
-        return Math.max(15, prev + change);
-      });
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 flex flex-col">
@@ -64,38 +50,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 🔥 КОМПАКТНАЯ СТАТИСТИКА */}
-          <div className="mb-12">
-            <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 px-4 py-2 shadow-sm">
-              {/* Основной счётчик */}
-              <div className="text-center">
-                <div className="text-lg font-medium text-gray-900">
-                  {visitors.toLocaleString()}
-                </div>
-                <div className="text-xs text-gray-500">посетителей</div>
-              </div>
-
-              {/* Разделитель */}
-              <div className="w-px h-6 bg-gray-200"></div>
-
-              {/* Онлайн */}
-              <div className="text-center">
-                <div className="text-sm font-medium text-blue-600 flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                  {online}
-                </div>
-                <div className="text-xs text-gray-500">онлайн</div>
-              </div>
-            </div>
-
-            {/* Предупреждение о тестовых данных */}
-            <div className="mt-3 text-center">
-              <div className="text-xs text-orange-600 bg-orange-50 inline-block px-2 py-1 rounded">
-                ⚠️ Счётчик в тестовом режиме • Данные не настоящие
-              </div>
-            </div>
-          </div>
-
           {/* Кнопки действий */}
           <div className="flex justify-center gap-4">
             <Link 
@@ -135,36 +89,23 @@ export default function Home() {
           <div className="bg-white rounded-t-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto animate-slide-up">
             <div className="p-6">
               {/* Заголовок и кнопка закрытия */}
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-medium text-gray-900">Лицензия и статистика</h3>
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-lg font-medium text-gray-900">Лицензия и информация</h3>
                 <button 
                   onClick={() => setShowLicensePanel(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors text-xl"
                 >
                   ✕
                 </button>
               </div>
 
-              {/* Счётчики */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <div className="text-center mb-4">
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {visitors.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-600">всего посещений</div>
-                </div>
-                <div className="text-center text-xs text-orange-600">
-                  ⚠️ Тестовый режим • Данные демонстрационные
-                </div>
-              </div>
-
               {/* Лицензия */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="text-center">
                   <a 
                     rel="license" 
                     href="https://creativecommons.org/licenses/by-sa/4.0/deed.ru"
-                    className="inline-block hover:opacity-80 transition-opacity mb-2"
+                    className="inline-block hover:opacity-80 transition-opacity mb-4"
                   >
                     <img 
                       alt="Лицензия Creative Commons" 
@@ -173,32 +114,39 @@ export default function Home() {
                   </a>
                 </div>
                 
-                <div className="text-sm text-gray-700 leading-relaxed space-y-3">
-                  <p>
-                    <strong>sMeNa.Tv 2017~2025</strong> • Открытый проект сообщества
+                {/* Стихотворное форматирование */}
+                <div className="text-center space-y-4">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    sMeNa.Tv 2017~2025
                   </p>
                   
-                  <p>
-                    Материалы сайта <a href="https://sMeNa.Tv" className="text-purple-600 hover:text-purple-800">sMeNa.Tv</a>, 
-                    если не указано иное, распространяются по лицензии{' '}
-                    <a 
-                      rel="license" 
-                      href="https://creativecommons.org/licenses/by-sa/4.0/deed.ru"
-                      className="text-purple-600 hover:text-purple-800"
-                    >
-                      Creative Commons «Attribution-ShareAlike» 4.0 Всемирная
-                    </a>.
-                  </p>
+                  <div className="space-y-3 text-sm text-gray-700">
+                    <p>Материалы этого сайта</p>
+                    <p>Распространяются свободно</p>
+                    <p>По лицензии открытой</p>
+                    <p>Creative Commons</p>
+                  </div>
 
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-blue-800 text-sm">
-                      <strong>Что это значит?</strong> Вы можете свободно использовать, 
-                      адаптировать и распространять материалы проекта при условии:
+                  {/* Волшебный блок с градиентом */}
+                  <div className="bg-gradient-to-br from-cyan-50 via-purple-50 to-pink-50 p-6 rounded-2xl border border-cyan-200/50 shadow-sm">
+                    <p className="text-sm font-medium mb-3 bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">
+                      Что это значит?
                     </p>
-                    <ul className="text-blue-700 text-sm mt-2 space-y-1 list-disc list-inside">
-                      <li><strong>Указания авторства</strong> (ссылка на sMeNa.Tv)</li>
-                      <li><strong>Распространения на тех же условиях</strong> (лицензия CC BY-SA)</li>
-                    </ul>
+                    <div className="space-y-2 text-sm text-gray-700 text-center">
+                      <p>Вы можете свободно использовать</p>
+                      <p>Адаптировать и распространять</p>
+                      <p>Материалы проекта при условии:</p>
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm text-center">
+                      <p className="text-cyan-700">✓ Указания авторства</p>
+                      <p className="text-purple-700">✓ Распространения на тех же условиях</p>
+                    </div>
+                  </div>
+
+                  {/* Заключительные строки */}
+                  <div className="space-y-2 text-sm text-gray-600 pt-4">
+                    <p>Делись творчеством свободно</p>
+                    <p>И мир станет ярче вместе с нами</p>
                   </div>
                 </div>
               </div>
