@@ -109,7 +109,7 @@ export default function Kulya2() {
           
           <div className="flex items-center gap-3">
             <div className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full">
-              ✅ Сервер: 194.87.57.198
+              ✅ Сервер активен
             </div>
           </div>
         </div>
