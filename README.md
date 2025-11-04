@@ -164,6 +164,7 @@ From myself I add [since we're on a watching spree]:*
 - **📖 "Притчи"** Льва Толстого - мудрость в простых историях | **"Parables"** by Leo Tolstoy - wisdom in simple stories
 - **✍️ "Мастер и Маргарита"** Михаила Булгакова - магия, любовь и вечные вопросы | **"The Master and Margarita"** by Mikhail Bulgakov - magic, love and eternal questions
 - **🎭 "Портрет Дориана Грея"** Оскара Уайльда - о красоте, морали и пороке | **"The Picture of Dorian Gray"** by Oscar Wilde - about beauty, morality and vice
+- **🎖️ "На Западном фронте без перемен"** Эриха Марии Ремарка - о ужасах войны и потерянном поколении | **"All Quiet on the Western Front"** by Erich Maria Remarque - about horrors of war and lost generation
 
 ---
 
