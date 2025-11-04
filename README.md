@@ -176,7 +176,7 @@ From myself I add [since we're on a watching spree]:*
 
 ## 📞 Контакты | Contacts
 
-- **🌐 Сайт:** [sMeNa.Tv](https://smena.tv) | **Website:** [sMeNa.Tv](https://smena.tv)
+- **🌐 Сайт:** | **Website:** [sMeNa.Tv](https://smena.tv)
 - **📱 Telegram:** [@KANCHER](https://t.me/KANCHER) 
 - **💻 GitHub:** [Kancher](https://github.com/Kancher)
 - **📧 Email:** [hello@smena.tv](mailto:hello@smena.tv)
