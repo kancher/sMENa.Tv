@@ -171,9 +171,8 @@ From myself I add [since we're on a watching spree]:*
 
 - **Frontend:** Next.js 14, React, TypeScript, Tailwind CSS
 - **Backend:** Python Flask, SQLite  
-- **AI:** DeepSeek API, Mistral API, локальные модели | local models
+- **AI:** DeepSeek API, Llama API, Mistral API, локальные модели | local models
 - **Инфраструктура:** CloudFlare, VPS Debian | **Infrastructure:** CloudFlare, VPS Debian
-- **Безопасность:** nftables, fail2ban, SSH-ключи | **Security:** nftables, fail2ban, SSH keys
 
 ## 📞 Контакты | Contacts
 
