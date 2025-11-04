@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 export default function Home() {
   const [showLicensePanel, setShowLicensePanel] = useState(false);
+  const [showKulyaMenu, setShowKulyaMenu] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 flex flex-col">
@@ -50,33 +51,57 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Кнопки действий */}
-          <div className="flex justify-center gap-4 flex-wrap">
-            <Link 
-              href="/lounge"
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-all text-sm font-medium"
+          {/* Кнопка Исследовать с выпадающим меню */}
+          <div className="relative inline-block">
+            <div 
+              className="relative"
+              onMouseEnter={() => setShowKulyaMenu(true)}
+              onMouseLeave={() => setShowKulyaMenu(false)}
             >
-              Исследовать
-            </Link>
-            <Link 
-              href="/logbook"
-              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-full hover:opacity-90 transition-all text-sm font-medium"
-            >
-              БортЖурнал
-            </Link>
-            <Link 
-              href="/kulya2"
-              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:opacity-90 transition-all text-sm font-medium flex items-center gap-2"
-            >
-              <span>Куля 2.0</span>
-              <span className="text-xs bg-white/20 px-1 rounded">NEW</span>
-            </Link>
-          </div>
-
-          {/* Статус сервера */}
-          <div className="mt-8 inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            Сервер Кули 2.0 активен
+              <Link 
+                href="/lounge"
+                className="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:opacity-90 transition-all text-base font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                Исследовать
+              </Link>
+              
+              {/* Выпадающее меню */}
+              {showKulyaMenu && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm z-50 animate-fade-in">
+                  <div className="p-2">
+                    <Link 
+                      href="/lounge"
+                      className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="w-2 h-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"></div>
+                      <span>Куля 1.0</span>
+                      <span className="text-xs text-gray-400">Классика</span>
+                    </Link>
+                    
+                    <div className="h-px bg-gray-200/50 my-1"></div>
+                    
+                    <Link 
+                      href="/kulya2"
+                      className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="w-2 h-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"></div>
+                      <span>Куля 2.0</span>
+                      <span className="text-xs bg-gradient-to-r from-pink-500 to-purple-500 text-white px-1 rounded">NEW</span>
+                    </Link>
+                    
+                    <div className="h-px bg-gray-200/50 my-1"></div>
+                    
+                    <Link 
+                      href="/logbook"
+                      className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      <span>БортЖурнал</span>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
@@ -132,6 +157,7 @@ export default function Home() {
                     <p><strong>sMeNa.Tv 2017~2025</strong></p>
                     <p>Город-Герой Севастополь</p>
                     <p>Республика Крым</p>
+                    <p>Российская Федерация</p>
                   </div>
 
                   <div className="bg-gradient-to-br from-cyan-50 via-purple-50 to-pink-50 p-6 rounded-2xl border border-cyan-200/50 shadow-sm">
@@ -169,8 +195,21 @@ export default function Home() {
             opacity: 1;
           }
         }
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .animate-slide-up {
           animation: slide-up 0.3s ease-out;
+        }
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out;
         }
       `}</style>
     </div>
