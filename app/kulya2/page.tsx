@@ -3,6 +3,15 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
+// В начало файла, после импортов
+useEffect(() => {
+  // Просто проверяем связь
+  fetch('http://194.87.57.198:5000/')
+    .then(response => response.json())
+    .then(data => console.log('Куля отвечает:', data))
+    .catch(error => console.error('Ошибка связи:', error));
+}, []);
+
 type Message = {
   id: string;
   text: string;
