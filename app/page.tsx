@@ -51,19 +51,32 @@ export default function Home() {
           </div>
 
           {/* Кнопки действий */}
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-4 flex-wrap">
             <Link 
               href="/lounge"
-              className="px-8 py-3 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-all text-sm font-medium"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-all text-sm font-medium"
             >
               Исследовать
             </Link>
             <Link 
               href="/logbook"
-              className="px-8 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-full hover:opacity-90 transition-all text-sm font-medium"
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-full hover:opacity-90 transition-all text-sm font-medium"
             >
               БортЖурнал
             </Link>
+            <Link 
+              href="/kulya2"
+              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:opacity-90 transition-all text-sm font-medium flex items-center gap-2"
+            >
+              <span>Куля 2.0</span>
+              <span className="text-xs bg-white/20 px-1 rounded">NEW</span>
+            </Link>
+          </div>
+
+          {/* Статус сервера */}
+          <div className="mt-8 inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            Сервер Кули 2.0 активен
           </div>
         </div>
       </main>
@@ -90,7 +103,7 @@ export default function Home() {
             <div className="p-6">
               {/* Заголовок и кнопка закрытия */}
               <div className="flex justify-between items-center mb-8">
-                <h3 className="text-lg font-medium text-gray-900">Лицензия и информация</h3>
+                <h3 className="text-lg font-medium text-gray-900">Лицензия Creative Commons</h3>
                 <button 
                   onClick={() => setShowLicensePanel(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors text-xl"
@@ -114,39 +127,28 @@ export default function Home() {
                   </a>
                 </div>
                 
-                {/* Стихотворное форматирование */}
                 <div className="text-center space-y-4">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    sMeNa.Tv 2017~2025
-                  </p>
-                  
                   <div className="space-y-3 text-sm text-gray-700">
-                    <p>Материалы этого сайта</p>
-                    <p>Распространяются свободно</p>
-                    <p>По лицензии открытой</p>
-                    <p>Creative Commons</p>
+                    <p><strong>sMeNa.Tv 2017~2025</strong></p>
+                    <p>Город-Герой Севастополь</p>
+                    <p>Республика Крым</p>
                   </div>
 
-                  {/* Волшебный блок с градиентом */}
                   <div className="bg-gradient-to-br from-cyan-50 via-purple-50 to-pink-50 p-6 rounded-2xl border border-cyan-200/50 shadow-sm">
                     <p className="text-sm font-medium mb-3 bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">
-                      Что это значит?
+                      Creative Commons Attribution-ShareAlike 4.0
                     </p>
-                    <div className="space-y-2 text-sm text-gray-700 text-center">
-                      <p>Вы можете свободно использовать</p>
-                      <p>Адаптировать и распространять</p>
-                      <p>Материалы проекта при условии:</p>
-                    </div>
-                    <div className="mt-4 space-y-2 text-sm text-center">
-                      <p className="text-cyan-700">✓ Указания авторства</p>
-                      <p className="text-purple-700">✓ Распространения на тех же условиях</p>
+                    <div className="space-y-3 text-sm text-gray-700">
+                      <p className="text-green-600">✅ <strong>Можно:</strong> использовать, адаптировать, распространять</p>
+                      <p className="text-green-600">✅ <strong>Можно:</strong> даже в коммерческих целях</p>
+                      <p className="text-blue-600">📝 <strong>Условие:</strong> указание авторства (ссылка на sMeNa.Tv)</p>
+                      <p className="text-blue-600">🔄 <strong>Условие:</strong> распространение на тех же условиях</p>
                     </div>
                   </div>
 
-                  {/* Заключительные строки */}
-                  <div className="space-y-2 text-sm text-gray-600 pt-4">
-                    <p>Делись творчеством свободно</p>
-                    <p>И мир станет ярче вместе с нами</p>
+                  <div className="text-xs text-gray-500 pt-4">
+                    <p>Материалы созданы человеком и ИИ в со-творчестве</p>
+                    <p>Лицензия гарантирует свободу использования и развития</p>
                   </div>
                 </div>
               </div>
