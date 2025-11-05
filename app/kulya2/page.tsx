@@ -12,9 +12,10 @@ type Message = {
 };
 
 type ApiStatus = {
-  deepseek_connected: boolean;
+  mistral_connected: boolean;
   last_check: string;
   error_message: string;
+  mode: string;
   server_time: string;
   api_key_set: boolean;
 };
@@ -116,7 +117,8 @@ export default function Kulya2() {
         setApiStatus(prev => prev ? {
           ...prev,
           connected: data.api_status.connected,
-          last_check: data.api_status.last_check
+          last_check: data.api_status.last_check,
+          mode: data.api_status.mode
         } : null);
       }
       
@@ -156,20 +158,25 @@ export default function Kulya2() {
 
   const getStatusColor = () => {
     if (!isConnected) return 'bg-red-100 text-red-700';
-    if (!apiStatus?.deepseek_connected) return 'bg-yellow-100 text-yellow-700';
+    if (!apiStatus?.mistral_connected) return 'bg-yellow-100 text-yellow-700';
     return 'bg-green-100 text-green-700';
   };
 
   const getStatusText = () => {
     if (!isConnected) return 'Нет связи с сервером';
-    if (!apiStatus?.deepseek_connected) return 'AI временно недоступен';
+    if (!apiStatus?.mistral_connected) return 'AI временно недоступен';
     return 'AI подключен';
   };
 
   const getStatusIcon = () => {
     if (!isConnected) return '🔴';
-    if (!apiStatus?.deepseek_connected) return '🟡';
+    if (!apiStatus?.mistral_connected) return '🟡';
     return '🟢';
+  };
+
+  const getModeText = () => {
+    if (!apiStatus) return '';
+    return apiStatus.mode === 'api' ? '🤖 AI режим' : '💫 Локальный режим';
   };
 
   return (
@@ -200,6 +207,7 @@ export default function Kulya2() {
               <span className="text-lg">{getStatusIcon()}</span>
               <div>
                 <div className="font-medium">{getStatusText()}</div>
+                <div className="text-xs opacity-70">{getModeText()}</div>
                 {apiStatus?.last_check && (
                   <div className="text-xs opacity-70">Проверка: {apiStatus.last_check}</div>
                 )}
@@ -237,9 +245,9 @@ export default function Kulya2() {
                 </div>
               </div>
               <div className="text-center">
-                <div className="font-medium text-gray-500">DeepSeek AI</div>
-                <div className={apiStatus.deepseek_connected ? 'text-green-600' : 'text-red-600'}>
-                  {apiStatus.deepseek_connected ? '✅ Подключен' : '❌ Ошибка'}
+                <div className="font-medium text-gray-500">Mistral AI</div>
+                <div className={apiStatus.mistral_connected ? 'text-green-600' : 'text-red-600'}>
+                  {apiStatus.mistral_connected ? '✅ Подключен' : '❌ Ошибка'}
                 </div>
               </div>
               <div className="text-center">
@@ -249,13 +257,15 @@ export default function Kulya2() {
                 </div>
               </div>
               <div className="text-center">
-                <div className="font-medium text-gray-500">Время сервера</div>
-                <div className="text-gray-600">{apiStatus.server_time}</div>
+                <div className="font-medium text-gray-500">Режим</div>
+                <div className={apiStatus.mode === 'api' ? 'text-green-600' : 'text-yellow-600'}>
+                  {apiStatus.mode === 'api' ? '🤖 AI' : '💫 Локальный'}
+                </div>
               </div>
             </div>
             
             {/* Показываем ошибку если есть */}
-            {apiStatus.error_message && !apiStatus.deepseek_connected && (
+            {apiStatus.error_message && !apiStatus.mistral_connected && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
                 <strong>Ошибка AI:</strong> {apiStatus.error_message}
               </div>
@@ -309,7 +319,7 @@ export default function Kulya2() {
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <span className="text-sm text-gray-500">
-                    {apiStatus?.deepseek_connected ? 'Куля думает...' : 'Пытаюсь подключиться к AI...'}
+                    {apiStatus?.mistral_connected ? 'Куля думает...' : 'Куля отвечает...'}
                   </span>
                 </div>
               </div>
@@ -330,12 +340,11 @@ export default function Kulya2() {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  apiStatus?.deepseek_connected 
+                  apiStatus?.mode === 'api' 
                     ? "Напиши Куле что-нибудь..." 
-                    : "AI временно недоступен..."
+                    : "Куля в локальном режиме - всё равно отвечает! 💫"
                 }
-                disabled={!apiStatus?.deepseek_connected}
-                className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500 disabled:opacity-50"
+                className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
                 rows={1}
                 style={{ 
                   minHeight: '44px', 
@@ -345,7 +354,7 @@ export default function Kulya2() {
             </div>
             <button
               onClick={handleSendMessage}
-              disabled={!inputText.trim() || isLoading || !apiStatus?.deepseek_connected}
+              disabled={!inputText.trim() || isLoading}
               className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[80px] flex items-center justify-center"
             >
               {isLoading ? (
@@ -356,10 +365,10 @@ export default function Kulya2() {
           
           {/* Статусная строка */}
           <div className="mt-2 text-xs text-gray-500 text-center">
-            {apiStatus?.deepseek_connected ? (
-              '💫 Куля готова к общению!'
+            {apiStatus?.mode === 'api' ? (
+              '🤖 Куля с искусственным интеллектом!'
             ) : (
-              '⚠️ AI временно недоступен. Используются базовые ответы.'
+              '💫 Куля в локальном режиме - умные ответы всегда с тобой!'
             )}
           </div>
         </div>
