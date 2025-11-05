@@ -18,7 +18,7 @@ export default function Kulya2() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! Я Куля 2.0 💫\nТеперь я живу на нашем сервере и помню все наши разговоры!',
+      text: 'Привет! Я Куля 2.0 💫!',
       isUser: false,
       timestamp: new Date()
     }
@@ -140,7 +140,7 @@ export default function Kulya2() {
               <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
               <div>
                 <h1 className="text-lg font-medium text-gray-900">Куля 2.0</h1>
-                <p className="text-xs text-gray-500">Народная помощница 💫</p>
+                <p className="text-xs text-gray-500">ПОМОЩница для Людей 🙋‍♀️</p>
               </div>
             </div>
           </div>
