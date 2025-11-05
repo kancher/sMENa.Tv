@@ -18,7 +18,7 @@ export default function Kulya2() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! Я Куля 2.0 💫!',
+      text: 'Привет! Я Куля 💃 Что интересует?',
       isUser: false,
       timestamp: new Date()
     }
