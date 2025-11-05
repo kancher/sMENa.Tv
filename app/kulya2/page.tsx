@@ -11,11 +11,14 @@ type Message = {
   isError?: boolean;
 };
 
+// CloudFlare Pages автоматически подставит переменную из Environment Variables
+const API_BASE_URL = process.env.BACKEND_API;
+
 export default function Kulya2() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! Я Куля 2.0 💫\nТеперь я живу на нашем сервере и помню все наши разговоры!',
+      text: 'Привет! Я Куля 2.0 💫\nТеперь я живу на нашем защищённом сервере!',
       isUser: false,
       timestamp: new Date()
     }
@@ -23,20 +26,31 @@ export default function Kulya2() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // ПЕРЕНЕС СЮДА - useEffect должен быть внутри компонента!
   useEffect(() => {
-    // Просто проверяем связь
-    fetch('http://194.87.57.198:5000/')
-      .then(response => response.json())
+    if (!API_BASE_URL) {
+      setConnectionError('BACKEND_API не настроен в Environment Variables');
+      setIsConnected(false);
+      return;
+    }
+
+    // Проверяем связь с нашим API
+    fetch(`${API_BASE_URL}/`)
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json();
+      })
       .then(data => {
-        console.log('Куля отвечает:', data);
+        console.log('✅ Куля отвечает:', data);
         setIsConnected(true);
+        setConnectionError('');
       })
       .catch(error => {
-        console.error('Ошибка связи:', error);
+        console.error('❌ Ошибка связи:', error);
         setIsConnected(false);
+        setConnectionError(error.message);
       });
   }, []);
 
@@ -45,7 +59,7 @@ export default function Kulya2() {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading) return;
+    if (!inputText.trim() || isLoading || !API_BASE_URL) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -59,8 +73,7 @@ export default function Kulya2() {
     setIsLoading(true);
 
     try {
-      // Отправляем на НАШ сервер!
-      const response = await fetch('http://194.87.57.198:5000/chat', {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,20 +83,23 @@ export default function Kulya2() {
         })
       });
 
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
       const data = await response.json();
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.kulya_response || data.reply || 'Ой, что-то пошло не так...',
+        text: data.kulya_response || data.reply || data.message || 'Ой, что-то пошло не так...',
         isUser: false,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
+      console.error('❌ Ошибка отправки:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: '⚠️ Сервер временно недоступен. Проверь подключение!',
+        text: '⚠️ Сервер временно недоступен. Попробуйте позже.',
         isUser: false,
         isError: true,
         timestamp: new Date()
@@ -102,6 +118,17 @@ export default function Kulya2() {
     }
   };
 
+  const clearChat = () => {
+    setMessages([
+      {
+        id: '1',
+        text: 'Чат очищен! Давайте начнём новый разговор! 💫',
+        isUser: false,
+        timestamp: new Date()
+      }
+    ]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-4 sticky top-0 z-50">
@@ -117,23 +144,40 @@ export default function Kulya2() {
               <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
               <div>
                 <h1 className="text-lg font-medium text-gray-900">Куля 2.0</h1>
-                <p className="text-xs text-gray-500">Живу на нашем сервере 💾</p>
+                <p className="text-xs text-gray-500">Защищённое HTTPS соединение 🔒</p>
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             <div className={`text-xs px-3 py-1 rounded-full flex items-center gap-2 ${
-              isConnected ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+              isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
             }`}>
               <div className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'
+                isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
               }`}></div>
-              {isConnected ? 'Сервер активен' : 'Проверяем связь...'}
+              {isConnected ? 'Связь установлена' : 'Нет связи'}
             </div>
+            
+            <button
+              onClick={clearChat}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Очистить чат"
+            >
+              🗑️
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Сообщение об ошибке подключения */}
+      {connectionError && (
+        <div className="bg-red-50 border border-red-200 p-3 mx-4 mt-4 rounded-lg max-w-4xl mx-auto">
+          <div className="text-red-800 text-sm">
+            <strong>Ошибка подключения:</strong> {connectionError}
+          </div>
+        </div>
+      )}
 
       {/* Чат контейнер */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -209,13 +253,18 @@ export default function Kulya2() {
             </div>
             <button
               onClick={handleSendMessage}
-              disabled={!inputText.trim() || isLoading}
+              disabled={!inputText.trim() || isLoading || !isConnected}
               className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[80px] flex items-center justify-center"
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : '➤'}
             </button>
+          </div>
+          
+          {/* Отладочная информация */}
+          <div className="mt-2 text-xs text-gray-400 text-center">
+            {API_BASE_URL ? `API: ${API_BASE_URL}` : 'BACKEND_API не настроен'}
           </div>
         </div>
       </div>
