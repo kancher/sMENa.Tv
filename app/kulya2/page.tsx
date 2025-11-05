@@ -11,14 +11,14 @@ type Message = {
   isError?: boolean;
 };
 
-// Временно захардкодим для теста
-const API_BASE_URL = 'https://api.kancher.ru';
+// Теперь используем переменную окружения из CloudFlare
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API;
 
 export default function Kulya2() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! Я Куля 2.0 💫\nТеперь я живу на нашем защищённом сервере!',
+      text: `Привет! Я Куля 2.0 💫\nТеперь я живу на ${process.env.NEXT_PUBLIC_BACKEND_API ? 'нашем сервере' : 'локальном сервере'}!`,
       isUser: false,
       timestamp: new Date()
     }
@@ -30,6 +30,12 @@ export default function Kulya2() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!API_BASE_URL) {
+      setConnectionError('NEXT_PUBLIC_BACKEND_API не настроен');
+      setIsConnected(false);
+      return;
+    }
+
     console.log('🔧 Проверяем связь с:', API_BASE_URL);
 
     // Проверяем связь с нашим API
