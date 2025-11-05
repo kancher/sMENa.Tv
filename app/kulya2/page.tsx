@@ -24,7 +24,7 @@ export default function Kulya2() {
     }
   ]);
   const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
