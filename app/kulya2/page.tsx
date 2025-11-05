@@ -12,13 +12,13 @@ type Message = {
 };
 
 // Теперь используем переменную окружения из CloudFlare
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API;
+const API_BASE_URL = process.env.PUBLIC_BACKEND_API;
 
 export default function Kulya2() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: `Привет! Я Куля 2.0 💫\nТеперь я живу на ${process.env.NEXT_PUBLIC_BACKEND_API ? 'нашем сервере' : 'локальном сервере'}!`,
+      text: `Привет! Я Куля 2.0 💫\nТеперь я живу на ${process.env.PUBLIC_BACKEND_API ? 'нашем сервере' : 'локальном сервере'}!`,
       isUser: false,
       timestamp: new Date()
     }
