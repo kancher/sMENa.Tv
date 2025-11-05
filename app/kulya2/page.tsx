@@ -11,8 +11,8 @@ type Message = {
   isError?: boolean;
 };
 
-// Правильное имя переменной для Next.js клиентских компонентов
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API;
+// Временно захардкодим для теста
+const API_BASE_URL = 'https://api.kancher.ru';
 
 export default function Kulya2() {
   const [messages, setMessages] = useState<Message[]>([
@@ -30,13 +30,7 @@ export default function Kulya2() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!API_BASE_URL) {
-      setConnectionError('NEXT_PUBLIC_BACKEND_API не настроен в Environment Variables');
-      setIsConnected(false);
-      return;
-    }
-
-    console.log('🔧 API_BASE_URL:', API_BASE_URL); // Для отладки
+    console.log('🔧 Проверяем связь с:', API_BASE_URL);
 
     // Проверяем связь с нашим API
     fetch(`${API_BASE_URL}/`)
@@ -61,7 +55,7 @@ export default function Kulya2() {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading || !API_BASE_URL) return;
+    if (!inputText.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -178,9 +172,6 @@ export default function Kulya2() {
           <div className="text-red-800 text-sm">
             <strong>Ошибка подключения:</strong> {connectionError}
           </div>
-          <div className="text-red-600 text-xs mt-1">
-            Проверь настройки NEXT_PUBLIC_BACKEND_API в CloudFlare Pages
-          </div>
         </div>
       )}
 
@@ -269,7 +260,7 @@ export default function Kulya2() {
           
           {/* Отладочная информация */}
           <div className="mt-2 text-xs text-gray-400 text-center">
-            {API_BASE_URL ? `API: ${API_BASE_URL}` : 'NEXT_PUBLIC_BACKEND_API не настроен'}
+            API: {API_BASE_URL}
           </div>
         </div>
       </div>
