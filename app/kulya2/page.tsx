@@ -11,6 +11,14 @@ type Message = {
   isError?: boolean;
 };
 
+type ApiStatus = {
+  deepseek_connected: boolean;
+  last_check: string;
+  error_message: string;
+  server_time: string;
+  api_key_set: boolean;
+};
+
 // Народная Куля для всех!
 const API_BASE_URL = 'https://api.kancher.ru';
 
@@ -26,28 +34,39 @@ export default function Kulya2() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
   const [connectionError, setConnectionError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    console.log('🔧 Проверяем связь с:', API_BASE_URL);
+  // Проверяем статус API
+  const checkApiStatus = async () => {
+    try {
+      console.log('🔧 Проверяем статус API...');
+      const response = await fetch(`${API_BASE_URL}/status`);
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const statusData: ApiStatus = await response.json();
+      console.log('✅ Статус API:', statusData);
+      
+      setApiStatus(statusData);
+      setIsConnected(true);
+      setConnectionError('');
+      
+    } catch (error) {
+      console.error('❌ Ошибка проверки статуса:', error);
+      setIsConnected(false);
+      setConnectionError(error instanceof Error ? error.message : 'Unknown error');
+      setApiStatus(null);
+    }
+  };
 
-    // Проверяем связь с нашим API
-    fetch(`${API_BASE_URL}/`)
-      .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-      })
-      .then(data => {
-        console.log('✅ Куля отвечает:', data);
-        setIsConnected(true);
-        setConnectionError('');
-      })
-      .catch(error => {
-        console.error('❌ Ошибка связи:', error);
-        setIsConnected(false);
-        setConnectionError(error.message);
-      });
+  useEffect(() => {
+    checkApiStatus();
+    
+    // Периодическая проверка статуса каждые 30 секунд
+    const interval = setInterval(checkApiStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -85,12 +104,22 @@ export default function Kulya2() {
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.kulya_response || data.reply || data.message || 'Ой, что-то пошло не так...',
+        text: data.kulya_response || 'Ой, что-то пошло не так...',
         isUser: false,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Обновляем статус API из ответа
+      if (data.api_status) {
+        setApiStatus(prev => prev ? {
+          ...prev,
+          connected: data.api_status.connected,
+          last_check: data.api_status.last_check
+        } : null);
+      }
+      
     } catch (error) {
       console.error('❌ Ошибка отправки:', error);
       const errorMessage: Message = {
@@ -125,6 +154,24 @@ export default function Kulya2() {
     ]);
   };
 
+  const getStatusColor = () => {
+    if (!isConnected) return 'bg-red-100 text-red-700';
+    if (!apiStatus?.deepseek_connected) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-green-100 text-green-700';
+  };
+
+  const getStatusText = () => {
+    if (!isConnected) return 'Нет связи с сервером';
+    if (!apiStatus?.deepseek_connected) return 'AI временно недоступен';
+    return 'AI подключен';
+  };
+
+  const getStatusIcon = () => {
+    if (!isConnected) return '🔴';
+    if (!apiStatus?.deepseek_connected) return '🟡';
+    return '🟢';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-4 sticky top-0 z-50">
@@ -137,22 +184,26 @@ export default function Kulya2() {
               ← На главную
             </Link>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">💃</span>
+              </div>
               <div>
                 <h1 className="text-lg font-medium text-gray-900">Куля 2.0</h1>
-                <p className="text-xs text-gray-500">ПОМОЩница для Людей 🙋‍♀️</p>
+                <p className="text-xs text-gray-500">AI помощник sMeNa.Tv</p>
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <div className={`text-xs px-3 py-1 rounded-full flex items-center gap-2 ${
-              isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-              }`}></div>
-              {isConnected ? 'Связь установлена' : 'Нет связи'}
+            {/* Статус подключения */}
+            <div className={`text-xs px-3 py-1 rounded-full flex items-center gap-2 ${getStatusColor()}`}>
+              <span className="text-lg">{getStatusIcon()}</span>
+              <div>
+                <div className="font-medium">{getStatusText()}</div>
+                {apiStatus?.last_check && (
+                  <div className="text-xs opacity-70">Проверка: {apiStatus.last_check}</div>
+                )}
+              </div>
             </div>
             
             <button
@@ -162,15 +213,53 @@ export default function Kulya2() {
             >
               🗑️
             </button>
+
+            <button
+              onClick={checkApiStatus}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Обновить статус"
+            >
+              🔄
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Сообщение об ошибке подключения */}
-      {connectionError && (
-        <div className="bg-red-50 border border-red-200 p-3 mx-4 mt-4 rounded-lg max-w-4xl mx-auto">
-          <div className="text-red-800 text-sm">
-            <strong>Ошибка подключения:</strong> {connectionError}
+      {/* Детальная информация о статусе */}
+      {apiStatus && (
+        <div className="bg-white/50 backdrop-blur-sm border-b border-gray-200/30 p-3">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+              <div className="text-center">
+                <div className="font-medium text-gray-500">Сервер</div>
+                <div className={isConnected ? 'text-green-600' : 'text-red-600'}>
+                  {isConnected ? '✅ Онлайн' : '❌ Офлайн'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium text-gray-500">DeepSeek AI</div>
+                <div className={apiStatus.deepseek_connected ? 'text-green-600' : 'text-red-600'}>
+                  {apiStatus.deepseek_connected ? '✅ Подключен' : '❌ Ошибка'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium text-gray-500">API Ключ</div>
+                <div className={apiStatus.api_key_set ? 'text-green-600' : 'text-red-600'}>
+                  {apiStatus.api_key_set ? '✅ Установлен' : '❌ Отсутствует'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium text-gray-500">Время сервера</div>
+                <div className="text-gray-600">{apiStatus.server_time}</div>
+              </div>
+            </div>
+            
+            {/* Показываем ошибку если есть */}
+            {apiStatus.error_message && !apiStatus.deepseek_connected && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                <strong>Ошибка AI:</strong> {apiStatus.error_message}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -219,7 +308,9 @@ export default function Kulya2() {
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-sm text-gray-500">Куля думает...</span>
+                  <span className="text-sm text-gray-500">
+                    {apiStatus?.deepseek_connected ? 'Куля думает...' : 'Пытаюсь подключиться к AI...'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -238,8 +329,13 @@ export default function Kulya2() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Напиши Куле что-нибудь..."
-                className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
+                placeholder={
+                  apiStatus?.deepseek_connected 
+                    ? "Напиши Куле что-нибудь..." 
+                    : "AI временно недоступен..."
+                }
+                disabled={!apiStatus?.deepseek_connected}
+                className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500 disabled:opacity-50"
                 rows={1}
                 style={{ 
                   minHeight: '44px', 
@@ -249,13 +345,22 @@ export default function Kulya2() {
             </div>
             <button
               onClick={handleSendMessage}
-              disabled={!inputText.trim() || isLoading || !isConnected}
+              disabled={!inputText.trim() || isLoading || !apiStatus?.deepseek_connected}
               className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[80px] flex items-center justify-center"
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : '➤'}
             </button>
+          </div>
+          
+          {/* Статусная строка */}
+          <div className="mt-2 text-xs text-gray-500 text-center">
+            {apiStatus?.deepseek_connected ? (
+              '💫 Куля готова к общению!'
+            ) : (
+              '⚠️ AI временно недоступен. Используются базовые ответы.'
+            )}
           </div>
         </div>
       </div>
