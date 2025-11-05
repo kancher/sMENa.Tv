@@ -9,6 +9,9 @@ type Message = {
   isUser: boolean;
   timestamp: Date;
   isError?: boolean;
+  isImage?: boolean;
+  mode?: string;
+  apiUsed?: string;
 };
 
 type ApiStatus = {
@@ -20,16 +23,23 @@ type ApiStatus = {
   api_key_set: boolean;
 };
 
-// Народная Куля для всех!
+// Три режима работы
+type ChatMode = 'common' | 'creative' | 'turbo';
+
+// Базовый URL API
 const API_BASE_URL = 'https://api.kancher.ru';
+
+// Счётчик нейронов CloudFlare
+const CLOUDFLARE_LIMIT = 10000; // 10,000 нейронов в день
 
 export default function Kulya2() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Привет! Я Куля 💃 Что интересует?',
+      text: 'Привет! Я Куля 💃 Выбери режим общения и погнали!',
       isUser: false,
-      timestamp: new Date()
+      timestamp: new Date(),
+      mode: 'common'
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -37,6 +47,8 @@ export default function Kulya2() {
   const [isConnected, setIsConnected] = useState(false);
   const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
   const [connectionError, setConnectionError] = useState<string>('');
+  const [currentMode, setCurrentMode] = useState<ChatMode>('common');
+  const [neuronsUsed, setNeuronsUsed] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Проверяем статус API
@@ -62,7 +74,12 @@ export default function Kulya2() {
     }
   };
 
+  // Загружаем историю нейронов из localStorage
   useEffect(() => {
+    const savedNeurons = localStorage.getItem('kulya_neurons_used');
+    if (savedNeurons) {
+      setNeuronsUsed(parseInt(savedNeurons));
+    }
     checkApiStatus();
     
     // Периодическая проверка статуса каждые 30 секунд
@@ -74,6 +91,25 @@ export default function Kulya2() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Обновляем счётчик нейронов
+  const updateNeuronsCounter = (apiUsed: string) => {
+    let neuronsToAdd = 0;
+    
+    if (apiUsed.includes('cloudflare')) {
+      if (apiUsed === 'cloudflare_llama') {
+        neuronsToAdd = 1; // Текстовый запрос
+      } else if (apiUsed === 'cloudflare_sd') {
+        neuronsToAdd = 5; // Генерация изображения
+      }
+    }
+    
+    if (neuronsToAdd > 0) {
+      const newTotal = neuronsUsed + neuronsToAdd;
+      setNeuronsUsed(newTotal);
+      localStorage.setItem('kulya_neurons_used', newTotal.toString());
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
 
@@ -81,7 +117,8 @@ export default function Kulya2() {
       id: Date.now().toString(),
       text: inputText,
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
+      mode: currentMode
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -89,13 +126,14 @@ export default function Kulya2() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/chat`, {
+      const response = await fetch(`${API_BASE_URL}/v2/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: inputText
+          message: inputText,
+          mode: currentMode
         })
       });
 
@@ -103,23 +141,31 @@ export default function Kulya2() {
 
       const data = await response.json();
       
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: data.kulya_response || 'Ой, что-то пошло не так...',
-        isUser: false,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      
-      // Обновляем статус API из ответа
-      if (data.api_status) {
-        setApiStatus(prev => prev ? {
-          ...prev,
-          connected: data.api_status.connected,
-          last_check: data.api_status.last_check,
-          mode: data.api_status.mode
-        } : null);
+      if (data.success) {
+        // Обновляем счётчик нейронов
+        if (data.api_used) {
+          updateNeuronsCounter(data.api_used);
+        }
+        
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: data.kulya_response || 'Ой, что-то пошло не так...',
+          isUser: false,
+          timestamp: new Date(),
+          mode: data.mode,
+          apiUsed: data.api_used,
+          isImage: data.is_image || false
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+        
+        // Если был автопереход из режима 1 в режим 3
+        if (currentMode === 'common' && data.mode === 'turbo' && data.api_used !== 'cloudflare_llama') {
+          setCurrentMode('turbo');
+          addSystemMessage('🔄 Автоматически переключилась в Турбо-режим!');
+        }
+      } else {
+        throw new Error(data.error || 'Unknown error');
       }
       
     } catch (error) {
@@ -129,13 +175,25 @@ export default function Kulya2() {
         text: '⚠️ Сервер временно недоступен. Попробуйте позже.',
         isUser: false,
         isError: true,
-        timestamp: new Date()
+        timestamp: new Date(),
+        mode: currentMode
       };
       
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const addSystemMessage = (text: string) => {
+    const systemMessage: Message = {
+      id: `system-${Date.now()}`,
+      text: text,
+      isUser: false,
+      timestamp: new Date(),
+      mode: currentMode
+    };
+    setMessages(prev => [...prev, systemMessage]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -149,35 +207,64 @@ export default function Kulya2() {
     setMessages([
       {
         id: '1',
-        text: 'Чат очищен! Давайте начнём новый разговор! 💫',
+        text: 'Чат очищен! Выбери режим и погнали! 💫',
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        mode: currentMode
       }
     ]);
   };
 
+  const resetNeuronsCounter = () => {
+    setNeuronsUsed(0);
+    localStorage.setItem('kulya_neurons_used', '0');
+    addSystemMessage('🧹 Счётчик нейронов сброшен! Начинаем новый день!');
+  };
+
   const getStatusColor = () => {
-    if (!isConnected) return 'bg-red-100 text-red-700';
-    if (!apiStatus?.mistral_connected) return 'bg-yellow-100 text-yellow-700';
-    return 'bg-green-100 text-green-700';
+    if (!isConnected) return 'bg-red-100 text-red-700 border-red-200';
+    if (currentMode === 'creative' && !isConnected) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    return 'bg-green-100 text-green-700 border-green-200';
   };
 
   const getStatusText = () => {
     if (!isConnected) return 'Нет связи с сервером';
-    if (!apiStatus?.mistral_connected) return 'AI временно недоступен';
-    return 'AI подключен';
+    
+    switch (currentMode) {
+      case 'common': return 'Общяшка (CloudFlare)';
+      case 'creative': return 'Творяшка (Изображения)';
+      case 'turbo': return 'Турбо-пупер-режим!';
+      default: return 'Режим не выбран';
+    }
   };
 
   const getStatusIcon = () => {
     if (!isConnected) return '🔴';
-    if (!apiStatus?.mistral_connected) return '🟡';
-    return '🟢';
+    
+    switch (currentMode) {
+      case 'common': return '💬';
+      case 'creative': return '🎨';
+      case 'turbo': return '⚡';
+      default: return '❓';
+    }
   };
 
-  const getModeText = () => {
-    if (!apiStatus) return '';
-    return apiStatus.mode === 'api' ? '🤖 AI режим' : '💫 Локальный режим';
+  const getModeDescription = () => {
+    switch (currentMode) {
+      case 'common': 
+        return 'Общаемся через CloudFlare (Llama-3)';
+      case 'creative':
+        return 'Генерируем изображения через Stable Diffusion';
+      case 'turbo':
+        return 'Мощный режим через Mistral AI API';
+      default:
+        return 'Выбери режим общения';
+    }
   };
+
+  // Прогресс-бар для нейронов
+  const neuronsPercentage = Math.min((neuronsUsed / CLOUDFLARE_LIMIT) * 100, 100);
+  const neuronsRemaining = CLOUDFLARE_LIMIT - neuronsUsed;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
@@ -195,22 +282,19 @@ export default function Kulya2() {
                 <span className="text-white text-sm">💃</span>
               </div>
               <div>
-                <h1 className="text-lg font-medium text-gray-900">Куля 2.0</h1>
-                <p className="text-xs text-gray-500">AI помощник sMeNa.Tv</p>
+                <h1 className="text-lg font-medium text-gray-900">Куля 3.0</h1>
+                <p className="text-xs text-gray-500">Трёхрежимный AI помощник</p>
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             {/* Статус подключения */}
-            <div className={`text-xs px-3 py-1 rounded-full flex items-center gap-2 ${getStatusColor()}`}>
+            <div className={`text-xs px-3 py-1 rounded-full flex items-center gap-2 border ${getStatusColor()}`}>
               <span className="text-lg">{getStatusIcon()}</span>
               <div>
                 <div className="font-medium">{getStatusText()}</div>
-                <div className="text-xs opacity-70">{getModeText()}</div>
-                {apiStatus?.last_check && (
-                  <div className="text-xs opacity-70">Проверка: {apiStatus.last_check}</div>
-                )}
+                <div className="text-xs opacity-70">{getModeDescription()}</div>
               </div>
             </div>
             
@@ -233,46 +317,86 @@ export default function Kulya2() {
         </div>
       </header>
 
-      {/* Детальная информация о статусе */}
-      {apiStatus && (
-        <div className="bg-white/50 backdrop-blur-sm border-b border-gray-200/30 p-3">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-              <div className="text-center">
-                <div className="font-medium text-gray-500">Сервер</div>
-                <div className={isConnected ? 'text-green-600' : 'text-red-600'}>
-                  {isConnected ? '✅ Онлайн' : '❌ Офлайн'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="font-medium text-gray-500">Mistral AI</div>
-                <div className={apiStatus.mistral_connected ? 'text-green-600' : 'text-red-600'}>
-                  {apiStatus.mistral_connected ? '✅ Подключен' : '❌ Ошибка'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="font-medium text-gray-500">API Ключ</div>
-                <div className={apiStatus.api_key_set ? 'text-green-600' : 'text-red-600'}>
-                  {apiStatus.api_key_set ? '✅ Установлен' : '❌ Отсутствует'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="font-medium text-gray-500">Режим</div>
-                <div className={apiStatus.mode === 'api' ? 'text-green-600' : 'text-yellow-600'}>
-                  {apiStatus.mode === 'api' ? '🤖 AI' : '💫 Локальный'}
-                </div>
-              </div>
+      {/* Счётчик нейронов CloudFlare */}
+      <div className="bg-white/50 backdrop-blur-sm border-b border-gray-200/30 p-3">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-medium text-gray-700">
+              ⛽ Нейроны CloudFlare: {neuronsUsed} / {CLOUDFLARE_LIMIT}
             </div>
-            
-            {/* Показываем ошибку если есть */}
-            {apiStatus.error_message && !apiStatus.mistral_connected && (
-              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                <strong>Ошибка AI:</strong> {apiStatus.error_message}
-              </div>
-            )}
+            <button
+              onClick={resetNeuronsCounter}
+              className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
+            >
+              Сбросить
+            </button>
+          </div>
+          
+          {/* Прогресс-бар */}
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-500 ${
+                neuronsPercentage < 70 ? 'bg-green-500' : 
+                neuronsPercentage < 90 ? 'bg-yellow-500' : 'bg-red-500'
+              }`}
+              style={{ width: `${neuronsPercentage}%` }}
+            ></div>
+          </div>
+          
+          <div className="text-xs text-gray-500 mt-1">
+            Осталось: {neuronsRemaining} нейронов • {neuronsPercentage.toFixed(1)}% использовано
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Переключатель режимов */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center gap-4">
+            {/* Режим 1: Общяшка */}
+            <button
+              onClick={() => setCurrentMode('common')}
+              className={`flex-1 max-w-48 py-3 px-4 rounded-xl border-2 transition-all ${
+                currentMode === 'common' 
+                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-cyan-300'
+              }`}
+            >
+              <div className="text-lg mb-1">💬</div>
+              <div className="font-medium text-sm">Общяшка</div>
+              <div className="text-xs opacity-80">CloudFlare</div>
+            </button>
+
+            {/* Режим 2: Творяшка */}
+            <button
+              onClick={() => setCurrentMode('creative')}
+              className={`flex-1 max-w-48 py-3 px-4 rounded-xl border-2 transition-all ${
+                currentMode === 'creative' 
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300'
+              }`}
+            >
+              <div className="text-lg mb-1">🎨</div>
+              <div className="font-medium text-sm">Творяшка</div>
+              <div className="text-xs opacity-80">Изображения</div>
+            </button>
+
+            {/* Режим 3: Турбо */}
+            <button
+              onClick={() => setCurrentMode('turbo')}
+              className={`flex-1 max-w-48 py-3 px-4 rounded-xl border-2 transition-all ${
+                currentMode === 'turbo' 
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
+              }`}
+            >
+              <div className="text-lg mb-1">⚡</div>
+              <div className="font-medium text-sm">Турбо-пупер</div>
+              <div className="text-xs opacity-80">Mistral API</div>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Чат контейнер */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -283,21 +407,55 @@ export default function Kulya2() {
               className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl p-4 ${
+                className={`max-w-[80%] rounded-2xl p-4 relative ${
                   message.isUser
                     ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
                     : message.isError
                     ? 'bg-red-50 border border-red-200 text-red-800'
+                    : message.isImage
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'
                     : 'bg-white border border-gray-200/50 text-gray-800 shadow-sm'
                 }`}
               >
-                <div className="whitespace-pre-wrap leading-relaxed">
-                  {message.text}
-                </div>
+                {/* Индикатор режима для сообщений AI */}
+                {!message.isUser && !message.isError && (
+                  <div className="absolute -top-2 -left-2 bg-white border border-gray-200 rounded-full px-2 py-1 text-xs text-gray-500 shadow-sm">
+                    {message.mode === 'common' && '💬'}
+                    {message.mode === 'creative' && '🎨'} 
+                    {message.mode === 'turbo' && '⚡'}
+                    {message.apiUsed && ` • ${message.apiUsed.includes('cloudflare') ? 'CF' : 'API'}`}
+                  </div>
+                )}
+                
+                {message.isImage ? (
+                  <div className="text-center">
+                    <div className="text-sm mb-2 opacity-80">🎨 Сгенерировано изображение:</div>
+                    {message.text && typeof message.text === 'string' && message.text.startsWith('data:image/') ? (
+                      <img 
+                        src={message.text} 
+                        alt="Сгенерированное изображение" 
+                        className="max-w-full h-auto rounded-lg mx-auto max-h-64 shadow-lg"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="bg-white/20 p-3 rounded-lg text-sm">
+                        {typeof message.text === 'string' ? message.text : 'Загружаю изображение...'}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-wrap leading-relaxed">
+                    {message.text}
+                  </div>
+                )}
+                
                 <div
                   className={`text-xs mt-2 ${
                     message.isUser ? 'text-cyan-100' : 
-                    message.isError ? 'text-red-400' : 'text-gray-400'
+                    message.isError ? 'text-red-400' : 
+                    message.isImage ? 'text-white/70' : 'text-gray-400'
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString('ru-RU', {
@@ -319,7 +477,9 @@ export default function Kulya2() {
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <span className="text-sm text-gray-500">
-                    {apiStatus?.mistral_connected ? 'Куля думает...' : 'Куля отвечает...'}
+                    {currentMode === 'common' && '💬 Общаемся...'}
+                    {currentMode === 'creative' && '🎨 Творим...'}
+                    {currentMode === 'turbo' && '⚡ Турбируем...'}
                   </span>
                 </div>
               </div>
@@ -340,9 +500,9 @@ export default function Kulya2() {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  apiStatus?.mode === 'api' 
-                    ? "Напиши Куле что-нибудь..." 
-                    : "Куля в локальном режиме - всё равно отвечает! 💫"
+                  currentMode === 'common' ? "Пиши что хочешь - отвечу через CloudFlare! 💬" :
+                  currentMode === 'creative' ? "Опиши что нарисовать... 🎨" :
+                  "Задавай сложные вопросы - включён турбо-режим! ⚡"
                 }
                 className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
                 rows={1}
@@ -355,21 +515,25 @@ export default function Kulya2() {
             <button
               onClick={handleSendMessage}
               disabled={!inputText.trim() || isLoading}
-              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[80px] flex items-center justify-center"
+              className={`px-6 py-3 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[80px] flex items-center justify-center ${
+                currentMode === 'common' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' :
+                currentMode === 'creative' ? 'bg-gradient-to-r from-pink-500 to-purple-500' :
+                'bg-gradient-to-r from-orange-500 to-red-500'
+              }`}
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : '➤'}
+              ) : (
+                currentMode === 'creative' ? '🎨' : '➤'
+              )}
             </button>
           </div>
           
           {/* Статусная строка */}
           <div className="mt-2 text-xs text-gray-500 text-center">
-            {apiStatus?.mode === 'api' ? (
-              '🤖 Куля с искусственным интеллектом!'
-            ) : (
-              '💫 Куля в локальном режиме - умные ответы всегда с тобой!'
-            )}
+            {currentMode === 'common' && '💬 Общяшка: быстрые ответы через CloudFlare Worker'}
+            {currentMode === 'creative' && '🎨 Творяшка: генерация изображений через Stable Diffusion'}
+            {currentMode === 'turbo' && '⚡ Турбо-пупер-режим: мощные ответы через Mistral API'}
           </div>
         </div>
       </div>
