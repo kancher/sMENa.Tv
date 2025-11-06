@@ -23,8 +23,8 @@ type User = {
 
 type ChatMode = 'auto' | 'advanced' | 'normal' | 'creative';
 type SystemStatus = {
-  advanced_api_available: boolean;
-  normal_api_available: boolean;
+  turbo_api_available: boolean;
+  fast_api_available: boolean;
   image_api_available: boolean;
   server_available: boolean;
   last_check: string;
@@ -90,8 +90,8 @@ export default function KulyaSmartChat() {
       }
     } catch (error) {
       setSystemStatus({
-        advanced_api_available: false,
-        normal_api_available: false,
+        turbo_api_available: false,
+        fast_api_available: false,
         image_api_available: false,
         server_available: false,
         last_check: new Date().toISOString()
@@ -349,11 +349,11 @@ export default function KulyaSmartChat() {
       return { text: 'ЛОКАЛЬНЫЙ', color: 'bg-red-500' };
     }
     
-    if (systemStatus.advanced_api_available && systemStatus.normal_api_available) {
+    if (systemStatus.turbo_api_available && systemStatus.fast_api_available) {
       return { text: 'ВСЕ СИСТЕМЫ', color: 'bg-green-500' };
     }
     
-    if (systemStatus.normal_api_available) {
+    if (systemStatus.fast_api_available) {
       return { text: 'ОСНОВНЫЕ', color: 'bg-yellow-500' };
     }
     
@@ -587,7 +587,7 @@ export default function KulyaSmartChat() {
                   ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-transparent shadow-lg' 
                   : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
               }`}
-              disabled={!systemStatus?.normal_api_available}
+              disabled={!systemStatus?.fast_api_available}
               title="Быстрые и стабильные ответы"
             >
               ⚡ Обычный
@@ -600,7 +600,7 @@ export default function KulyaSmartChat() {
                   ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg' 
                   : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
               }`}
-              disabled={!systemStatus?.advanced_api_available}
+              disabled={!systemStatus?.turbo_api_available}
               title="Мощные и качественные ответы"
             >
               🚀 Продвинутый
