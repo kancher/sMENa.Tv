@@ -68,6 +68,7 @@ export default function Kulya2WithAuth() {
         setIsAuthenticated(true);
         setShowAuthModal(false);
         loadUserHistory(token);
+        loadUserStats(token);
       } else {
         localStorage.removeItem('kulya_token');
         setShowAuthModal(true);
@@ -75,6 +76,24 @@ export default function Kulya2WithAuth() {
     } catch (error) {
       localStorage.removeItem('kulya_token');
       setShowAuthModal(true);
+    }
+  };
+
+  // 📊 Загрузка статистики пользователя
+  const loadUserStats = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setNeuronsUsed(data.stats.daily_tokens_used || 0);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки статистики:', error);
     }
   };
 
@@ -99,6 +118,7 @@ export default function Kulya2WithAuth() {
         setShowAuthModal(false);
         addWelcomeMessage(data.user);
         loadUserHistory(data.token);
+        loadUserStats(data.token);
       } else {
         alert(data.error || 'Ошибка аутентификации');
       }
@@ -113,7 +133,7 @@ export default function Kulya2WithAuth() {
   const addWelcomeMessage = (user: User) => {
     const welcomeMessage: Message = {
       id: 'welcome',
-      text: `Привет! Я Куля 💃 Рада тебя видеть, ${user.username} ${user.emoji}!\n\nВыбери режим общения и давай творить чудеса! ✨`,
+      text: `Привет! Я Куля 💃 Рада тебя видеть, ${user.username} ${user.emoji}!\n\nВыбери режим общения внизу и давай творить чудеса! ✨`,
       isUser: false,
       timestamp: new Date(),
       mode: 'common',
@@ -282,7 +302,7 @@ export default function Kulya2WithAuth() {
     setMessages([
       {
         id: '1',
-        text: `Чат очищен! Выбери режим и погнали, ${currentUser?.username} ${currentUser?.emoji}! 💫`,
+        text: `Чат очищен! Выбери режим внизу и погнали, ${currentUser?.username} ${currentUser?.emoji}! 💫`,
         isUser: false,
         timestamp: new Date(),
         mode: currentMode,
@@ -291,43 +311,19 @@ export default function Kulya2WithAuth() {
     ]);
   };
 
-  // 🎨 Получение цвета статуса
-  const getStatusColor = () => {
-    if (!currentUser) return 'bg-red-100 text-red-700 border-red-200';
-    
-    switch (currentMode) {
-      case 'common': return 'bg-cyan-100 text-cyan-700 border-cyan-200';
-      case 'creative': return 'bg-pink-100 text-pink-700 border-pink-200';
-      case 'turbo': return 'bg-orange-100 text-orange-700 border-orange-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
-
-  // 📝 Текст статуса
-  const getStatusText = () => {
-    if (!currentUser) return 'Не авторизован';
-    
-    switch (currentMode) {
-      case 'common': return '💬 Общяшка';
-      case 'creative': return '🎨 Творяшка';
-      case 'turbo': return '⚡ Турбо-пупер';
-      default: return 'Режим не выбран';
-    }
-  };
-
-  // 📋 Описание режима
-  const getModeDescription = () => {
-    switch (currentMode) {
-      case 'common': return 'Общаемся через CloudFlare (Llama-3)';
-      case 'creative': return 'Генерируем изображения через Stable Diffusion';
-      case 'turbo': return 'Мощный режим через Mistral AI API';
-      default: return 'Выбери режим общения';
-    }
-  };
-
   // ⛽ Прогресс-бар для нейронов
   const neuronsPercentage = Math.min((neuronsUsed / CLOUDFLARE_LIMIT) * 100, 100);
   const neuronsRemaining = CLOUDFLARE_LIMIT - neuronsUsed;
+
+  // 🎯 Получение описания режима
+  const getModeDescription = () => {
+    switch (currentMode) {
+      case 'common': return 'Общаемся через CloudFlare';
+      case 'creative': return 'Генерируем изображения';
+      case 'turbo': return 'Мощный режим через Mistral';
+      default: return 'Выбери режим';
+    }
+  };
 
   // 🚫 Модальное окно аутентификации
   if (showAuthModal) {
@@ -388,65 +384,62 @@ export default function Kulya2WithAuth() {
   // 💬 Основной интерфейс чата
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
-      {/* 🎪 Хедер с информацией о пользователе */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-4 sticky top-0 z-50 shadow-sm">
+      {/* 🎪 Компактный хедер */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-3 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           {/* 👤 Информация о пользователе */}
-          <div className="flex items-center gap-3">
-            <Link href="/" className="p-2 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600">
-              ← На главную
+          <div className="flex items-center gap-2">
+            <Link href="/" className="p-1 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600 text-sm">
+              ←
             </Link>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-md">
-                <span className="text-white text-sm">💃</span>
+              <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-md">
+                <span className="text-white text-xs">💃</span>
               </div>
               <div>
-                <h1 className="text-lg font-medium text-gray-900">Куля 4.0</h1>
-                <p className="text-xs text-gray-500">
-                  {currentUser?.username} {currentUser?.emoji} • {currentUser?.role}
-                </p>
+                <div className="text-sm font-medium text-gray-900">
+                  {currentUser?.username} {currentUser?.emoji}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {getModeDescription()}
+                </div>
               </div>
             </div>
           </div>
           
           {/* 🎛️ Управление */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={handleLogout}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              title="Выйти из аккаунта"
+              className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Выйти"
             >
               Выйти
             </button>
             
             <button
               onClick={clearChat}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               title="Очистить чат"
             >
               🗑️
             </button>
           </div>
         </div>
-      </header>
 
-      {/* ⛽ Счётчик нейронов CloudFlare */}
-      <div className="bg-white/50 backdrop-blur-sm border-b border-gray-200/30 p-3">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <span>⛽</span>
-              <span>Нейроны CloudFlare: {neuronsUsed} / {CLOUDFLARE_LIMIT}</span>
+        {/* ⛽ Счётчик нейронов */}
+        <div className="max-w-4xl mx-auto mt-2">
+          <div className="flex items-center justify-between text-xs">
+            <div className="text-gray-600">
+              ⛽ Нейроны: {neuronsUsed}/{CLOUDFLARE_LIMIT}
             </div>
-            <div className="text-xs text-gray-500">
-              Осталось: {neuronsRemaining} • {neuronsPercentage.toFixed(1)}%
+            <div className="text-gray-500">
+              Осталось: {neuronsRemaining}
             </div>
           </div>
-          
-          {/* 📊 Прогресс-бар */}
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
             <div 
-              className={`h-2 rounded-full transition-all duration-500 ${
+              className={`h-1.5 rounded-full transition-all duration-500 ${
                 neuronsPercentage < 70 ? 'bg-green-500' : 
                 neuronsPercentage < 90 ? 'bg-yellow-500' : 'bg-red-500'
               }`}
@@ -454,67 +447,18 @@ export default function Kulya2WithAuth() {
             ></div>
           </div>
         </div>
-      </div>
-
-      {/* 🎚️ Переключатель режимов */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center gap-4">
-            {/* 💬 Режим 1: Общяшка */}
-            <button
-              onClick={() => setCurrentMode('common')}
-              className={`flex-1 max-w-48 py-3 px-4 rounded-xl border-2 transition-all ${
-                currentMode === 'common' 
-                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white border-transparent shadow-lg scale-105' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-cyan-300 hover:shadow-md'
-              }`}
-            >
-              <div className="text-lg mb-1">💬</div>
-              <div className="font-medium text-sm">Общяшка</div>
-              <div className="text-xs opacity-80">CloudFlare</div>
-            </button>
-
-            {/* 🎨 Режим 2: Творяшка */}
-            <button
-              onClick={() => setCurrentMode('creative')}
-              className={`flex-1 max-w-48 py-3 px-4 rounded-xl border-2 transition-all ${
-                currentMode === 'creative' 
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg scale-105' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300 hover:shadow-md'
-              }`}
-            >
-              <div className="text-lg mb-1">🎨</div>
-              <div className="font-medium text-sm">Творяшка</div>
-              <div className="text-xs opacity-80">Изображения</div>
-            </button>
-
-            {/* ⚡ Режим 3: Турбо */}
-            <button
-              onClick={() => setCurrentMode('turbo')}
-              className={`flex-1 max-w-48 py-3 px-4 rounded-xl border-2 transition-all ${
-                currentMode === 'turbo' 
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg scale-105' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300 hover:shadow-md'
-              }`}
-            >
-              <div className="text-lg mb-1">⚡</div>
-              <div className="font-medium text-sm">Турбо-пупер</div>
-              <div className="text-xs opacity-80">Mistral API</div>
-            </button>
-          </div>
-        </div>
-      </div>
+      </header>
 
       {/* 💭 Контейнер сообщений */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-4xl mx-auto space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-20">
+        <div className="max-w-4xl mx-auto space-y-3">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl p-4 relative ${
+                className={`max-w-[85%] rounded-2xl p-3 relative ${
                   message.isUser
                     ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
                     : message.isError
@@ -526,40 +470,39 @@ export default function Kulya2WithAuth() {
               >
                 {/* 🏷️ Индикатор режима для сообщений AI */}
                 {!message.isUser && !message.isError && (
-                  <div className="absolute -top-2 -left-2 bg-white border border-gray-200 rounded-full px-2 py-1 text-xs text-gray-500 shadow-sm flex items-center gap-1">
-                    {message.mode === 'common' && '💬'}
-                    {message.mode === 'creative' && '🎨'} 
-                    {message.mode === 'turbo' && '⚡'}
-                    {message.apiUsed && ` • ${message.apiUsed.includes('cloudflare') ? 'CF' : 'API'}`}
+                  <div className="absolute -top-1 -left-1 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-xs text-gray-500 shadow-sm flex items-center gap-1">
+                    {message.mode === 'common' && '🙆‍♀️'}
+                    {message.mode === 'creative' && '💃'} 
+                    {message.mode === 'turbo' && '💁‍♀️'}
                   </div>
                 )}
                 
                 {message.isImage ? (
                   <div className="text-center">
-                    <div className="text-sm mb-2 opacity-80">🎨 Сгенерировано изображение:</div>
+                    <div className="text-xs mb-1 opacity-80">🎨 Сгенерировано изображение:</div>
                     {message.text && typeof message.text === 'string' && message.text.startsWith('data:image/') ? (
                       <img 
                         src={message.text} 
                         alt="Сгенерированное изображение" 
-                        className="max-w-full h-auto rounded-lg mx-auto max-h-64 shadow-lg"
+                        className="max-w-full h-auto rounded-lg mx-auto max-h-48 shadow-lg"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                         }}
                       />
                     ) : (
-                      <div className="bg-white/20 p-3 rounded-lg text-sm">
+                      <div className="bg-white/20 p-2 rounded-lg text-xs">
                         {typeof message.text === 'string' ? message.text : 'Загружаю изображение...'}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap leading-relaxed">
+                  <div className="whitespace-pre-wrap leading-relaxed text-sm">
                     {message.text}
                   </div>
                 )}
                 
                 <div
-                  className={`text-xs mt-2 ${
+                  className={`text-xs mt-1 ${
                     message.isUser ? 'text-cyan-100' : 
                     message.isError ? 'text-red-400' : 
                     message.isImage ? 'text-white/70' : 'text-gray-400'
@@ -577,17 +520,17 @@ export default function Kulya2WithAuth() {
           {/* ⏳ Индикатор загрузки */}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200/50 rounded-2xl p-4">
+              <div className="bg-white border border-gray-200/50 rounded-2xl p-3">
                 <div className="flex items-center gap-2">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {currentMode === 'common' && '💬 Общаемся...'}
-                    {currentMode === 'creative' && '🎨 Творим...'}
-                    {currentMode === 'turbo' && '⚡ Турбируем...'}
+                  <span className="text-xs text-gray-500">
+                    {currentMode === 'common' && '🙆‍♀️ Общаемся...'}
+                    {currentMode === 'creative' && '💃 Творим...'}
+                    {currentMode === 'turbo' && '💁‍♀️ Турбируем...'}
                   </span>
                 </div>
               </div>
@@ -598,32 +541,74 @@ export default function Kulya2WithAuth() {
         </div>
       </div>
 
-      {/* ⌨️ Поле ввода */}
-      <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-4 sticky bottom-0">
+      {/* 🎚️ Переключатель режимов - ТЕПЕРЬ ВНИЗУ */}
+      <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 sticky bottom-0">
         <div className="max-w-4xl mx-auto">
-          <div className="flex gap-3">
+          <div className="flex justify-center gap-3 mb-2">
+            {/* 🙆‍♀️ Режим 1: Общяшка */}
+            <button
+              onClick={() => setCurrentMode('common')}
+              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+                currentMode === 'common' 
+                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white border-transparent shadow-lg scale-110' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-cyan-300 hover:shadow-md'
+              }`}
+              title="Общяшка - CloudFlare"
+            >
+              🙆‍♀️
+            </button>
+
+            {/* 💃 Режим 2: Творяшка */}
+            <button
+              onClick={() => setCurrentMode('creative')}
+              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+                currentMode === 'creative' 
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg scale-110' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300 hover:shadow-md'
+              }`}
+              title="Творяшка - Изображения"
+            >
+              💃🎨
+            </button>
+
+            {/* 💁‍♀️ Режим 3: Турбо */}
+            <button
+              onClick={() => setCurrentMode('turbo')}
+              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+                currentMode === 'turbo' 
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg scale-110' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300 hover:shadow-md'
+              }`}
+              title="Турбо-пупер - Mistral API"
+            >
+              💁‍♀️🤓
+            </button>
+          </div>
+
+          {/* ⌨️ Поле ввода */}
+          <div className="flex gap-2">
             <div className="flex-1 bg-gray-100 rounded-xl border border-gray-200/50 focus-within:border-purple-400 transition-colors">
               <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  currentMode === 'common' ? "Пиши что хочешь - отвечу через CloudFlare! 💬" :
-                  currentMode === 'creative' ? "Опиши что нарисовать... 🎨" :
-                  "Задавай сложные вопросы - включён турбо-режим! ⚡"
+                  currentMode === 'common' ? "Пиши что хочешь... 🙆‍♀️" :
+                  currentMode === 'creative' ? "Опиши что нарисовать... 💃🎨" :
+                  "Задавай сложные вопросы... 💁‍♀️🤓"
                 }
-                className="w-full bg-transparent border-none resize-none py-3 px-4 focus:outline-none text-gray-800 placeholder-gray-500"
+                className="w-full bg-transparent border-none resize-none py-2 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
                 rows={1}
                 style={{ 
-                  minHeight: '44px', 
-                  maxHeight: '120px'
+                  minHeight: '40px', 
+                  maxHeight: '80px'
                 }}
               />
             </div>
             <button
               onClick={handleSendMessage}
               disabled={!inputText.trim() || isLoading}
-              className={`px-6 py-3 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 min-w-[80px] flex items-center justify-center ${
+              className={`px-4 py-2 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 flex items-center justify-center ${
                 currentMode === 'common' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' :
                 currentMode === 'creative' ? 'bg-gradient-to-r from-pink-500 to-purple-500' :
                 'bg-gradient-to-r from-orange-500 to-red-500'
@@ -635,13 +620,6 @@ export default function Kulya2WithAuth() {
                 currentMode === 'creative' ? '🎨' : '➤'
               )}
             </button>
-          </div>
-          
-          {/* ℹ️ Статусная строка */}
-          <div className="mt-2 text-xs text-gray-500 text-center">
-            {currentMode === 'common' && '💬 Общяшка: быстрые ответы через CloudFlare Worker'}
-            {currentMode === 'creative' && '🎨 Творяшка: генерация изображений через Stable Diffusion'}
-            {currentMode === 'turbo' && '⚡ Турбо-пупер-режим: мощные ответы через Mistral API'}
           </div>
         </div>
       </div>
