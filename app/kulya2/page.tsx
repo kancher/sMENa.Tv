@@ -30,7 +30,7 @@ type SystemStatus = {
   last_check: string;
 };
 
-const API_BASE_URL = 'https://api.kancher.ru';
+const API_BASE_URL = 'https://kulya-api-proxy.smenatv.workers.dev';
 
 export default function KulyaChat() {
   const [messages, setMessages] = useState<Message[]>([]);
