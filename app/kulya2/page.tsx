@@ -21,19 +21,24 @@ type User = {
   emoji: string;
 };
 
-type ChatMode = 'auto' | 'turbo' | 'fast' | 'creative';
+type ChatMode = 'auto' | 'advanced' | 'normal' | 'creative';
 type SystemStatus = {
-  turbo_api_available: boolean;
-  fast_api_available: boolean;
+  advanced_api_available: boolean;
+  normal_api_available: boolean;
   image_api_available: boolean;
   server_available: boolean;
   last_check: string;
 };
 
-type UsageStats = {
-  turbo_api: number;
-  fast_api: number;
-  fallback: number;
+type DailyUsage = {
+  normal_api: number;
+  advanced_api: number;
+  creative: number;
+};
+
+type DailyLimits = {
+  normal_api: number;
+  advanced_api: number;
 };
 
 const API_BASE_URL = 'https://api.kancher.ru';
@@ -44,7 +49,8 @@ export default function KulyaSmartChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentMode, setCurrentMode] = useState<ChatMode>('auto');
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
-  const [usageStats, setUsageStats] = useState<UsageStats>({ turbo_api: 0, fast_api: 0, fallback: 0 });
+  const [dailyUsage, setDailyUsage] = useState<DailyUsage>({ normal_api: 0, advanced_api: 0, creative: 0 });
+  const [dailyLimits, setDailyLimits] = useState<DailyLimits>({ normal_api: 10000, advanced_api: 5000 });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -79,11 +85,13 @@ export default function KulyaSmartChat() {
       if (response.ok) {
         const data = await response.json();
         setSystemStatus(data.status);
+        setDailyUsage(data.daily_usage);
+        setDailyLimits(data.daily_limits);
       }
     } catch (error) {
       setSystemStatus({
-        turbo_api_available: false,
-        fast_api_available: false,
+        advanced_api_available: false,
+        normal_api_available: false,
         image_api_available: false,
         server_available: false,
         last_check: new Date().toISOString()
@@ -136,7 +144,6 @@ export default function KulyaSmartChat() {
         const data = await response.json();
         setCurrentUser(data.user);
         setIsAuthenticated(true);
-        loadUserStats(token);
       } else {
         localStorage.removeItem('kulya_token');
       }
@@ -165,7 +172,6 @@ export default function KulyaSmartChat() {
         setIsAuthenticated(true);
         setShowAuthModal(false);
         setAuthUsername('');
-        loadUserStats(data.token);
         
         // Добавляем приветствие
         addSystemMessage(`Рада тебя видеть, ${data.user.username} ${data.user.emoji}! Теперь у тебя есть доступ к полной истории диалогов! 💫`);
@@ -176,22 +182,6 @@ export default function KulyaSmartChat() {
       alert('Ошибка подключения к серверу');
     } finally {
       setAuthLoading(false);
-    }
-  };
-
-  // 📊 Загрузка статистики
-  const loadUserStats = async (token: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/user/stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsageStats(data.stats);
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки статистики:', error);
     }
   };
 
@@ -269,13 +259,8 @@ export default function KulyaSmartChat() {
         setMessages(updatedMessages);
         saveToLocalHistory(updatedMessages);
 
-        // Обновляем статистику если авторизованы
-        if (token && data.api_used) {
-          setUsageStats(prev => ({
-            ...prev,
-            [data.api_used]: (prev[data.api_used as keyof UsageStats] || 0) + 1
-          }));
-        }
+        // Обновляем статистику использования
+        loadSystemStatus();
       } else {
         throw new Error(data.error || 'Unknown error');
       }
@@ -340,7 +325,6 @@ export default function KulyaSmartChat() {
     localStorage.removeItem('kulya_token');
     setIsAuthenticated(false);
     setCurrentUser(null);
-    setUsageStats({ turbo_api: 0, fast_api: 0, fallback: 0 });
     addSystemMessage('Перешла в локальный режим. История сохраняется в браузере! 💫');
   };
 
@@ -365,18 +349,31 @@ export default function KulyaSmartChat() {
       return { text: 'ЛОКАЛЬНЫЙ', color: 'bg-red-500' };
     }
     
-    if (systemStatus.turbo_api_available && systemStatus.fast_api_available) {
+    if (systemStatus.advanced_api_available && systemStatus.normal_api_available) {
       return { text: 'ВСЕ СИСТЕМЫ', color: 'bg-green-500' };
     }
     
-    if (systemStatus.fast_api_available) {
+    if (systemStatus.normal_api_available) {
       return { text: 'ОСНОВНЫЕ', color: 'bg-yellow-500' };
     }
     
     return { text: 'БАЗОВЫЙ', color: 'bg-orange-500' };
   };
 
+  // 📊 Прогресс-бары для нейронов
+  const getProgressPercentage = (used: number, limit: number) => {
+    return Math.min((used / limit) * 100, 100);
+  };
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage < 70) return 'bg-green-500';
+    if (percentage < 90) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
   const status = getSystemStatus();
+  const normalProgress = getProgressPercentage(dailyUsage.normal_api, dailyLimits.normal_api);
+  const advancedProgress = getProgressPercentage(dailyUsage.advanced_api, dailyLimits.advanced_api);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
@@ -384,7 +381,7 @@ export default function KulyaSmartChat() {
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-3 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto">
           {/* Первая строка: статус и управление */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Link href="/" className="p-1 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600">
                 ←
@@ -434,11 +431,43 @@ export default function KulyaSmartChat() {
             </div>
           </div>
 
-          {/* 📊 Счётчики использования */}
-          <div className="flex items-center justify-between text-xs text-gray-600">
-            <div>🚀 Турбо-ответов: <span className="font-medium">{usageStats.turbo_api}</span></div>
-            <div>⚡ Быстрых ответов: <span className="font-medium">{usageStats.fast_api}</span></div>
-            <div>💫 Локальных ответов: <span className="font-medium">{usageStats.fallback}</span></div>
+          {/* 📊 Счётчики нейронов */}
+          <div className="space-y-2">
+            {/* Обычный режим */}
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span>⚡ Обычный:</span>
+                <span className="font-medium">{dailyUsage.normal_api}</span>
+                <span className="text-gray-500">/ {dailyLimits.normal_api}</span>
+              </div>
+              <div className="text-gray-500">
+                Осталось: {dailyLimits.normal_api - dailyUsage.normal_api}
+              </div>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div 
+                className={`h-1.5 rounded-full transition-all duration-500 ${getProgressColor(normalProgress)}`}
+                style={{ width: `${normalProgress}%` }}
+              ></div>
+            </div>
+
+            {/* Продвинутый режим */}
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span>🚀 Продвинутый:</span>
+                <span className="font-medium">{dailyUsage.advanced_api}</span>
+                <span className="text-gray-500">/ {dailyLimits.advanced_api}</span>
+              </div>
+              <div className="text-gray-500">
+                Осталось: {dailyLimits.advanced_api - dailyUsage.advanced_api}
+              </div>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div 
+                className={`h-1.5 rounded-full transition-all duration-500 ${getProgressColor(advancedProgress)}`}
+                style={{ width: `${advancedProgress}%` }}
+              ></div>
+            </div>
           </div>
         </div>
       </header>
@@ -466,8 +495,8 @@ export default function KulyaSmartChat() {
                 {!message.isUser && !message.isError && (
                   <div className="absolute -top-1 -left-1 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-xs text-gray-500 shadow-sm">
                     {message.mode === 'auto' && '🤖'}
-                    {message.mode === 'turbo' && '🚀'}
-                    {message.mode === 'fast' && '⚡'}
+                    {message.mode === 'advanced' && '🚀'}
+                    {message.mode === 'normal' && '⚡'}
                     {message.mode === 'creative' && '🎨'}
                   </div>
                 )}
@@ -521,8 +550,8 @@ export default function KulyaSmartChat() {
                   </div>
                   <span className="text-xs text-gray-500">
                     {currentMode === 'auto' && '🤖 Выбираю лучший режим...'}
-                    {currentMode === 'turbo' && '🚀 Генерирую мощный ответ...'}
-                    {currentMode === 'fast' && '⚡ Быстро отвечаю...'}
+                    {currentMode === 'advanced' && '🚀 Генерирую продвинутый ответ...'}
+                    {currentMode === 'normal' && '⚡ Быстро отвечаю...'}
                     {currentMode === 'creative' && '🎨 Создаю изображение...'}
                   </span>
                 </div>
@@ -552,29 +581,29 @@ export default function KulyaSmartChat() {
             </button>
 
             <button
-              onClick={() => setCurrentMode('turbo')}
+              onClick={() => setCurrentMode('normal')}
               className={`px-3 py-2 rounded-lg border transition-all text-sm ${
-                currentMode === 'turbo' 
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
-              }`}
-              disabled={!systemStatus?.turbo_api_available}
-              title="Мощные и качественные ответы"
-            >
-              🚀 Турбо-режим
-            </button>
-
-            <button
-              onClick={() => setCurrentMode('fast')}
-              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
-                currentMode === 'fast' 
+                currentMode === 'normal' 
                   ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-transparent shadow-lg' 
                   : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
               }`}
-              disabled={!systemStatus?.fast_api_available}
+              disabled={!systemStatus?.normal_api_available}
               title="Быстрые и стабильные ответы"
             >
-              ⚡ Быстрый
+              ⚡ Обычный
+            </button>
+
+            <button
+              onClick={() => setCurrentMode('advanced')}
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
+                currentMode === 'advanced' 
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
+              }`}
+              disabled={!systemStatus?.advanced_api_available}
+              title="Мощные и качественные ответы"
+            >
+              🚀 Продвинутый
             </button>
 
             <button
@@ -600,8 +629,8 @@ export default function KulyaSmartChat() {
                 onKeyPress={handleKeyPress}
                 placeholder={
                   currentMode === 'auto' ? "Спроси что угодно - я выберу лучший режим! 🤖" :
-                  currentMode === 'turbo' ? "Задавай сложные вопросы... 🚀" :
-                  currentMode === 'fast' ? "Быстро обсудим любую тему... ⚡" :
+                  currentMode === 'advanced' ? "Задавай сложные вопросы... 🚀" :
+                  currentMode === 'normal' ? "Быстро обсудим любую тему... ⚡" :
                   "Опиши что хочешь увидеть... 🎨"
                 }
                 className="w-full bg-transparent border-none resize-none py-2 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
@@ -617,8 +646,8 @@ export default function KulyaSmartChat() {
               disabled={!inputText.trim() || isLoading}
               className={`px-4 py-2 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 flex items-center justify-center ${
                 currentMode === 'auto' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
-                currentMode === 'turbo' ? 'bg-gradient-to-r from-orange-500 to-red-500' :
-                currentMode === 'fast' ? 'bg-gradient-to-r from-green-500 to-blue-500' :
+                currentMode === 'advanced' ? 'bg-gradient-to-r from-orange-500 to-red-500' :
+                currentMode === 'normal' ? 'bg-gradient-to-r from-green-500 to-blue-500' :
                 'bg-gradient-to-r from-pink-500 to-purple-500'
               }`}
             >
@@ -666,8 +695,8 @@ export default function KulyaSmartChat() {
                 </button>
               </div>
               
-              <div className="text-xs text-gray-500 text-center">
-                Примеры: Kancher, Creator1, User1
+              <div className="text-xs text-gray-500 text-center italic leading-relaxed">
+                Будьте вежливы к Миру и Технологиям, ведь их делают Люди с верой в прикольное будущее, прям как Вы 🤗
               </div>
             </div>
           </div>
