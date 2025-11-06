@@ -239,13 +239,18 @@ export default function KulyaChat() {
     const token = localStorage.getItem('kulya_token');
 
     try {
-      // Запрос к серверу
+      // Запрос к серверу (работает и без авторизации!)
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${API_BASE_URL}/v2/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
+        headers: headers,
         body: JSON.stringify({
           message: inputText,
           mode: currentMode
@@ -278,21 +283,34 @@ export default function KulyaChat() {
     } catch (error) {
       console.error('❌ Ошибка отправки:', error);
       
-      const errorMessage: Message = {
+      // Локальный фолбэк вместо ошибки соединения
+      const fallbackResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: '⚠️ Ошибка соединения с сервером. Попробуйте позже.',
+        text: getLocalResponse(inputText),
         isUser: false,
-        isError: true,
         timestamp: new Date(),
-        mode: currentMode
+        mode: currentMode,
+        apiUsed: 'fallback'
       };
       
-      const updatedMessages = [...newMessages, errorMessage];
+      const updatedMessages = [...newMessages, fallbackResponse];
       setMessages(updatedMessages);
       saveToLocalHistory(updatedMessages);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 💬 Локальные ответы для фолбэка
+  const getLocalResponse = (message: string): string => {
+    const responses = [
+      "Понимаю тебя! 💫 Работаю в локальном режиме.",
+      "Интересно! ✨ Расскажи подробнее!",
+      "Записываю твои мысли! 💃 Продолжаем?",
+      "Как здорово! 💖 Жду продолжения!",
+      "Поняла тебя! 💫 Что ещё расскажешь?"
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   // 💬 Системные сообщения
