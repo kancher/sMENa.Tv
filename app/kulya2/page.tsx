@@ -179,7 +179,7 @@ export default function KulyaChat() {
       } else {
         setMessages([{
           id: 'welcome',
-          text: 'Привет! Я Куля 💃\n\nГотова к общению! Выбери режим работы внизу и погнали! ✨',
+          text: 'Привет! Я Куля 💃\n\nГотова к общению! Выбери режим работы и погнали! ✨',
           isUser: false,
           timestamp: new Date(),
           mode: 'auto'
@@ -438,12 +438,12 @@ export default function KulyaChat() {
   const status = getSystemStatus();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
-      {/* 🎪 Хедер */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-3 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col safe-area-inset">
+      {/* 🎪 Хедер с режимами */}
+      <header className="bg-white/90 backdrop-blur-lg border-b border-gray-200/50 p-3 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto">
-          {/* Первая строка: статус и управление */}
-          <div className="flex items-center justify-between mb-2">
+          {/* Первая строка: навигация и статус */}
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Link href="/" className="p-1 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600">
                 ←
@@ -451,33 +451,33 @@ export default function KulyaChat() {
               
               {/* 🔦 Сигнальная лампочка */}
               <div className="flex items-center gap-2" title={status.tooltip}>
-                <div className={`w-3 h-3 rounded-full ${status.color} animate-pulse`}></div>
-                <span className="text-sm font-medium text-gray-700">{status.text}</span>
+                <div className={`w-2 h-2 rounded-full ${status.color} animate-pulse`}></div>
+                <span className="text-xs font-medium text-gray-700">{status.text}</span>
               </div>
-              
-              {/* 👤 Информация о пользователе */}
-              {currentUser && (
-                <div className="text-sm text-gray-600">
-                  {currentUser.username} {currentUser.emoji}
-                </div>
-              )}
             </div>
             
+            {/* 👤 Информация о пользователе */}
+            {currentUser && (
+              <div className="text-xs text-gray-600">
+                {currentUser.username} {currentUser.emoji}
+              </div>
+            )}
+            
             {/* 🎛️ Управление */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {systemStatus?.server_available && (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="px-3 py-1 text-sm bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                  className="px-2 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
                 >
-                  {isAuthenticated ? 'Аккаунт' : 'Войти'}
+                  {isAuthenticated ? '👤' : 'Войти'}
                 </button>
               )}
               
               {isAuthenticated && (
                 <button
                   onClick={handleLogout}
-                  className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs"
                 >
                   Выйти
                 </button>
@@ -492,11 +492,77 @@ export default function KulyaChat() {
               </button>
             </div>
           </div>
+
+          {/* Вторая строка: переключатель режимов */}
+          <div className="flex justify-between gap-1">
+            <button
+              onClick={() => setCurrentMode('auto')}
+              className={`flex-1 px-2 py-2 rounded-lg border transition-all text-xs ${
+                currentMode === 'auto' 
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-md' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300'
+              }`}
+              title="Автоматический выбор лучшего режима"
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <span>🤖</span>
+                <span className="text-[10px]">Автомат</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setCurrentMode('turbo')}
+              className={`flex-1 px-2 py-2 rounded-lg border transition-all text-xs ${
+                currentMode === 'turbo' 
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-md' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
+              }`}
+              disabled={!systemStatus?.turbo_api_available}
+              title="Мощные и качественные ответы"
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <span>🚀</span>
+                <span className="text-[10px]">Турбо</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setCurrentMode('fast')}
+              className={`flex-1 px-2 py-2 rounded-lg border transition-all text-xs ${
+                currentMode === 'fast' 
+                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-transparent shadow-md' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
+              }`}
+              disabled={!systemStatus?.fast_api_available}
+              title="Быстрые и стабильные ответы"
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <span>⚡</span>
+                <span className="text-[10px]">Быстрый</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setCurrentMode('creative')}
+              className={`flex-1 px-2 py-2 rounded-lg border transition-all text-xs ${
+                currentMode === 'creative' 
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-md' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300'
+              }`}
+              disabled={!systemStatus?.image_api_available}
+              title="Генерация изображений"
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <span>🎨</span>
+                <span className="text-[10px]">Творческий</span>
+              </div>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* 💭 Контейнер сообщений */}
-      <div className="flex-1 overflow-y-auto p-4 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 pb-20">
         <div className="max-w-4xl mx-auto space-y-3">
           {messages.map((message) => (
             <div
@@ -583,64 +649,9 @@ export default function KulyaChat() {
         </div>
       </div>
 
-      {/* 🎚️ Панель управления */}
-      <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 fixed bottom-0 left-0 right-0">
+      {/* 🎚️ Панель ввода */}
+      <div className="bg-white/90 backdrop-blur-lg border-t border-gray-200/50 p-3 fixed bottom-0 left-0 right-0 safe-area-inset-bottom">
         <div className="max-w-4xl mx-auto">
-          {/* Переключатель режимов */}
-          <div className="flex justify-center gap-2 mb-3 flex-wrap">
-            <button
-              onClick={() => setCurrentMode('auto')}
-              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
-                currentMode === 'auto' 
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300'
-              }`}
-              title="Автоматический выбор лучшего режима"
-            >
-              🤖 Автомат
-            </button>
-
-            <button
-              onClick={() => setCurrentMode('turbo')}
-              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
-                currentMode === 'turbo' 
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
-              }`}
-              disabled={!systemStatus?.turbo_api_available}
-              title="Мощные и качественные ответы"
-            >
-              🚀 Турбо-режим
-            </button>
-
-            <button
-              onClick={() => setCurrentMode('fast')}
-              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
-                currentMode === 'fast' 
-                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-transparent shadow-lg' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
-              }`}
-              disabled={!systemStatus?.fast_api_available}
-              title="Быстрые и стабильные ответы"
-            >
-              ⚡ Быстрый
-            </button>
-
-            <button
-              onClick={() => setCurrentMode('creative')}
-              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
-                currentMode === 'creative' 
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300'
-              }`}
-              disabled={!systemStatus?.image_api_available}
-              title="Генерация изображений"
-            >
-              🎨 Творческий
-            </button>
-          </div>
-
-          {/* Поле ввода */}
           <div className="flex gap-2">
             <div className="flex-1 bg-gray-100 rounded-xl border border-gray-200/50 focus-within:border-purple-400 transition-colors">
               <textarea
@@ -648,23 +659,23 @@ export default function KulyaChat() {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  currentMode === 'auto' ? "Спроси что угодно - я выберу лучший режим! 🤖" :
+                  currentMode === 'auto' ? "Спроси что угодно... 🤖" :
                   currentMode === 'turbo' ? "Задавай сложные вопросы... 🚀" :
                   currentMode === 'fast' ? "Быстро обсудим любую тему... ⚡" :
                   "Опиши что хочешь увидеть... 🎨"
                 }
-                className="w-full bg-transparent border-none resize-none py-2 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
+                className="w-full bg-transparent border-none resize-none py-3 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
                 rows={1}
                 style={{ 
-                  minHeight: '40px', 
-                  maxHeight: '80px'
+                  minHeight: '44px',
+                  maxHeight: '120px'
                 }}
               />
             </div>
             <button
               onClick={handleSendMessage}
               disabled={!inputText.trim() || isLoading}
-              className={`px-4 py-2 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 flex items-center justify-center ${
+              className={`px-4 py-3 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 flex items-center justify-center min-w-[44px] ${
                 currentMode === 'auto' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
                 currentMode === 'turbo' ? 'bg-gradient-to-r from-orange-500 to-red-500' :
                 currentMode === 'fast' ? 'bg-gradient-to-r from-green-500 to-blue-500' :
@@ -683,8 +694,8 @@ export default function KulyaChat() {
 
       {/* 🔐 Модальное окно аутентификации */}
       {showAuthModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 safe-area-inset">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Вход в систему</h3>
             
             <div className="space-y-4">
@@ -694,7 +705,7 @@ export default function KulyaChat() {
                   value={authUsername}
                   onChange={(e) => setAuthUsername(e.target.value)}
                   placeholder="Введите имя пользователя"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 text-base"
                   onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                 />
               </div>
@@ -703,13 +714,13 @@ export default function KulyaChat() {
                 <button
                   onClick={handleLogin}
                   disabled={!authUsername.trim() || authLoading}
-                  className="flex-1 bg-purple-500 text-white py-2 rounded-lg font-medium disabled:opacity-50"
+                  className="flex-1 bg-purple-500 text-white py-3 rounded-lg font-medium disabled:opacity-50 text-base"
                 >
                   {authLoading ? 'Вход...' : 'Войти'}
                 </button>
                 <button
                   onClick={() => setShowAuthModal(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-base"
                 >
                   Отмена
                 </button>
@@ -722,6 +733,16 @@ export default function KulyaChat() {
           </div>
         </div>
       )}
+
+      {/* Стили для безопасных зон iPhone */}
+      <style jsx global>{`
+        .safe-area-inset {
+          padding-top: env(safe-area-inset-top);
+        }
+        .safe-area-inset-bottom {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      `}</style>
     </div>
   );
 }
