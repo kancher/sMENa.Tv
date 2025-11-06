@@ -54,6 +54,10 @@ export default function KulyaChat() {
     if (token) {
       checkAuth(token);
     }
+    
+    // Периодическая проверка статуса
+    const interval = setInterval(loadSystemStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // 📜 Автопрокрутка
@@ -77,6 +81,73 @@ export default function KulyaChat() {
         server_available: false,
         last_check: new Date().toISOString()
       });
+    }
+  };
+
+  // 🔐 Проверка аутентификации
+  const checkAuth = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentUser(data.user);
+        setIsAuthenticated(true);
+        setShowAuthModal(false);
+        loadUserHistory(token);
+      } else {
+        localStorage.removeItem('kulya_token');
+      }
+    } catch (error) {
+      localStorage.removeItem('kulya_token');
+    }
+  };
+
+  // 📚 Загрузка истории пользователя
+  const loadUserHistory = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/dialogs/history?limit=10`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.history.length > 0) {
+          const historyMessages: Message[] = data.history.reverse().map((dialog: any) => ({
+            id: `hist_${dialog.id}`,
+            text: dialog.user_message,
+            isUser: true,
+            timestamp: new Date(dialog.timestamp),
+            mode: dialog.mode
+          }));
+          
+          const responseMessages: Message[] = data.history.map((dialog: any) => ({
+            id: `resp_${dialog.id}`,
+            text: dialog.ai_response,
+            isUser: false,
+            timestamp: new Date(dialog.timestamp),
+            mode: dialog.mode,
+            apiUsed: dialog.api_used,
+            isImage: dialog.ai_response?.startsWith?.('data:image/')
+          }));
+          
+          // Чередуем сообщения пользователя и ответы
+          const allMessages: Message[] = [];
+          for (let i = 0; i < historyMessages.length; i++) {
+            allMessages.push(historyMessages[i]);
+            if (responseMessages[i]) {
+              allMessages.push(responseMessages[i]);
+            }
+          }
+          
+          setMessages(allMessages);
+          saveToLocalHistory(allMessages);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки истории:', error);
     }
   };
 
@@ -113,25 +184,6 @@ export default function KulyaChat() {
     }
   };
 
-  // 🔐 Проверка аутентификации
-  const checkAuth = async (token: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUser(data.user);
-        setIsAuthenticated(true);
-      } else {
-        localStorage.removeItem('kulya_token');
-      }
-    } catch (error) {
-      localStorage.removeItem('kulya_token');
-    }
-  };
-
   // 🚪 Вход в систему
   const handleLogin = async () => {
     if (!authUsername.trim()) return;
@@ -152,8 +204,9 @@ export default function KulyaChat() {
         setIsAuthenticated(true);
         setShowAuthModal(false);
         setAuthUsername('');
+        loadUserHistory(data.token);
         
-        addSystemMessage(`Рада тебя видеть, ${data.user.username} ${data.user.emoji}! 💫`);
+        addSystemMessage(`Рада тебя видеть, ${data.user.username} ${data.user.emoji}! Теперь у тебя есть доступ к полной истории диалогов! 💫`);
       } else {
         alert(data.error || 'Ошибка аутентификации');
       }
@@ -186,25 +239,6 @@ export default function KulyaChat() {
     const token = localStorage.getItem('kulya_token');
 
     try {
-      // Если сервер недоступен - локальный ответ
-      if (!systemStatus?.server_available) {
-        setTimeout(() => {
-          const fallbackResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            text: getLocalResponse(inputText),
-            isUser: false,
-            timestamp: new Date(),
-            mode: currentMode,
-            apiUsed: 'fallback'
-          };
-          const updatedMessages = [...newMessages, fallbackResponse];
-          setMessages(updatedMessages);
-          saveToLocalHistory(updatedMessages);
-          setIsLoading(false);
-        }, 1000);
-        return;
-      }
-
       // Запрос к серверу
       const response = await fetch(`${API_BASE_URL}/v2/chat`, {
         method: 'POST',
@@ -246,11 +280,11 @@ export default function KulyaChat() {
       
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: getLocalResponse(inputText),
+        text: '⚠️ Ошибка соединения с сервером. Попробуйте позже.',
         isUser: false,
+        isError: true,
         timestamp: new Date(),
-        mode: currentMode,
-        apiUsed: 'fallback'
+        mode: currentMode
       };
       
       const updatedMessages = [...newMessages, errorMessage];
@@ -259,18 +293,6 @@ export default function KulyaChat() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // 💬 Локальные ответы
-  const getLocalResponse = (message: string): string => {
-    const responses = [
-      "Понимаю тебя! 💫 Сейчас работаю в локальном режиме.",
-      "Интересно! ✨ Расскажи подробнее!",
-      "Записываю твои мысли! 💃 Продолжаем?",
-      "Как здорово! 💖 Жду продолжения!",
-      "Поняла тебя! 💫 Что ещё расскажешь?"
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   // 💬 Системные сообщения
@@ -316,65 +338,87 @@ export default function KulyaChat() {
     saveToLocalHistory(newMessages);
   };
 
+  // 🎯 Получение статуса системы
+  const getSystemStatus = () => {
+    if (!systemStatus) return { text: 'Проверяем...', color: 'bg-gray-400' };
+    
+    if (!systemStatus.server_available) {
+      return { text: 'ЛОКАЛЬНЫЙ', color: 'bg-red-500' };
+    }
+    
+    if (systemStatus.turbo_api_available && systemStatus.fast_api_available) {
+      return { text: 'ВСЕ СИСТЕМЫ', color: 'bg-green-500' };
+    }
+    
+    if (systemStatus.fast_api_available) {
+      return { text: 'ОСНОВНЫЕ', color: 'bg-yellow-500' };
+    }
+    
+    return { text: 'БАЗОВЫЙ', color: 'bg-orange-500' };
+  };
+
+  const status = getSystemStatus();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
       {/* 🎪 Хедер */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-3 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="p-1 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600 text-sm">
-              ←
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-md">
-                <span className="text-white text-xs">💃</span>
+        <div className="max-w-4xl mx-auto">
+          {/* Первая строка: статус и управление */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <Link href="/" className="p-1 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600">
+                ←
+              </Link>
+              
+              {/* 🔦 Сигнальная лампочка */}
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${status.color} animate-pulse`}></div>
+                <span className="text-sm font-medium text-gray-700">{status.text}</span>
               </div>
-              <div>
-                <div className="text-sm font-medium text-gray-900">
-                  {currentUser?.username || 'Гость'} {currentUser?.emoji || '😊'}
+              
+              {/* 👤 Информация о пользователе */}
+              {currentUser && (
+                <div className="text-sm text-gray-600">
+                  {currentUser.username} {currentUser.emoji}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {currentMode === 'auto' && '🤖 Автомат'}
-                  {currentMode === 'turbo' && '🚀 Турбо-режим'}
-                  {currentMode === 'fast' && '⚡ Быстрый'}
-                  {currentMode === 'creative' && '🎨 Творческий'}
-                </div>
-              </div>
+              )}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-1">
-            {systemStatus?.server_available && (
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="px-2 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-              >
-                {isAuthenticated ? 'Аккаунт' : 'Войти'}
-              </button>
-            )}
             
-            {isAuthenticated && (
+            {/* 🎛️ Управление */}
+            <div className="flex items-center gap-2">
+              {systemStatus?.server_available && (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="px-3 py-1 text-sm bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                >
+                  {isAuthenticated ? 'Аккаунт' : 'Войти'}
+                </button>
+              )}
+              
+              {isAuthenticated && (
+                <button
+                  onClick={handleLogout}
+                  className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Выйти
+                </button>
+              )}
+              
               <button
-                onClick={handleLogout}
-                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                onClick={clearChat}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Очистить чат"
               >
-                Выйти
+                🗑️
               </button>
-            )}
-            
-            <button
-              onClick={clearChat}
-              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Очистить чат"
-            >
-              🗑️
-            </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* 💭 Контейнер сообщений */}
-      <div className="flex-1 overflow-y-auto p-4 pb-20">
+      <div className="flex-1 overflow-y-auto p-4 pb-24">
         <div className="max-w-4xl mx-auto space-y-3">
           {messages.map((message) => (
             <div
@@ -384,7 +428,7 @@ export default function KulyaChat() {
               <div
                 className={`max-w-[85%] rounded-2xl p-3 relative ${
                   message.isUser
-                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
                     : message.isError
                     ? 'bg-red-50 border border-red-200 text-red-800'
                     : message.isImage
@@ -392,8 +436,9 @@ export default function KulyaChat() {
                     : 'bg-white border border-gray-200/50 text-gray-800 shadow-sm'
                 }`}
               >
+                {/* 🏷️ Индикатор режима */}
                 {!message.isUser && !message.isError && (
-                  <div className="absolute -top-1 -left-1 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-xs text-gray-500 shadow-sm flex items-center gap-1">
+                  <div className="absolute -top-1 -left-1 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-xs text-gray-500 shadow-sm">
                     {message.mode === 'auto' && '🤖'}
                     {message.mode === 'turbo' && '🚀'}
                     {message.mode === 'fast' && '⚡'}
@@ -404,7 +449,7 @@ export default function KulyaChat() {
                 {message.isImage ? (
                   <div className="text-center">
                     <div className="text-xs mb-1 opacity-80">🎨 Сгенерировано изображение:</div>
-                    {message.text && typeof message.text === 'string' && message.text.startsWith('data:image/') ? (
+                    {message.text && message.text.startsWith('data:image/') ? (
                       <img 
                         src={message.text} 
                         alt="Сгенерированное изображение" 
@@ -412,7 +457,7 @@ export default function KulyaChat() {
                       />
                     ) : (
                       <div className="bg-white/20 p-2 rounded-lg text-xs">
-                        {typeof message.text === 'string' ? message.text : 'Загружаю изображение...'}
+                        {message.text}
                       </div>
                     )}
                   </div>
@@ -424,7 +469,7 @@ export default function KulyaChat() {
                 
                 <div
                   className={`text-xs mt-1 ${
-                    message.isUser ? 'text-cyan-100' : 
+                    message.isUser ? 'text-blue-100' : 
                     message.isError ? 'text-red-400' : 
                     message.isImage ? 'text-white/70' : 'text-gray-400'
                   }`}
@@ -438,6 +483,7 @@ export default function KulyaChat() {
             </div>
           ))}
           
+          {/* ⏳ Индикатор загрузки */}
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white border border-gray-200/50 rounded-2xl p-3">
@@ -463,61 +509,63 @@ export default function KulyaChat() {
       </div>
 
       {/* 🎚️ Панель управления */}
-      <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 sticky bottom-0">
+      <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 fixed bottom-0 left-0 right-0">
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-center gap-2 mb-2">
+          {/* Переключатель режимов */}
+          <div className="flex justify-center gap-2 mb-3">
             <button
               onClick={() => setCurrentMode('auto')}
-              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
                 currentMode === 'auto' 
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg scale-110' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:shadow-md'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300'
               }`}
-              title="Автоматический выбор"
+              title="Автоматический выбор лучшего режима"
             >
-              🤖
+              🤖 Автомат
             </button>
 
             <button
               onClick={() => setCurrentMode('turbo')}
-              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
                 currentMode === 'turbo' 
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg scale-110' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300 hover:shadow-md'
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
               }`}
               disabled={!systemStatus?.turbo_api_available}
-              title="Турбо-режим"
+              title="Мощные и качественные ответы"
             >
-              🚀
+              🚀 Турбо-режим
             </button>
 
             <button
               onClick={() => setCurrentMode('fast')}
-              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
                 currentMode === 'fast' 
-                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-transparent shadow-lg scale-110' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-green-300 hover:shadow-md'
+                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
               }`}
               disabled={!systemStatus?.fast_api_available}
-              title="Быстрый режим"
+              title="Быстрые и стабильные ответы"
             >
-              ⚡
+              ⚡ Быстрый
             </button>
 
             <button
               onClick={() => setCurrentMode('creative')}
-              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
                 currentMode === 'creative' 
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg scale-110' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300 hover:shadow-md'
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300'
               }`}
               disabled={!systemStatus?.image_api_available}
-              title="Творческий режим"
+              title="Генерация изображений"
             >
-              🎨
+              🎨 Творческий
             </button>
           </div>
 
+          {/* Поле ввода */}
           <div className="flex gap-2">
             <div className="flex-1 bg-gray-100 rounded-xl border border-gray-200/50 focus-within:border-purple-400 transition-colors">
               <textarea
@@ -525,10 +573,10 @@ export default function KulyaChat() {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  currentMode === 'auto' ? "Пиши что хочешь... 🤖" :
+                  currentMode === 'auto' ? "Спроси что угодно - я выберу лучший режим! 🤖" :
                   currentMode === 'turbo' ? "Задавай сложные вопросы... 🚀" :
                   currentMode === 'fast' ? "Быстро обсудим любую тему... ⚡" :
-                  "Опиши что нарисовать... 🎨"
+                  "Опиши что хочешь увидеть... 🎨"
                 }
                 className="w-full bg-transparent border-none resize-none py-2 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
                 rows={1}
