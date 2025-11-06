@@ -19,27 +19,20 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Обработчик для мобильного меню
-  const handleMenuToggle = () => {
+  // Переключение меню
+  const toggleMenu = () => {
     setShowKulyaMenu(!showKulyaMenu);
   };
 
-  // Закрытие меню при клике outside (для мобильных)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showKulyaMenu && !(event.target as Element).closest('.menu-container')) {
-        setShowKulyaMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showKulyaMenu]);
+  // Закрытие меню при выборе пункта
+  const handleMenuSelect = () => {
+    setShowKulyaMenu(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 flex flex-col safe-area-inset">
       {/* Header - Centered Logo */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-6 sticky top-0 z-50">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-6 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto flex justify-center">
           <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-3">
@@ -80,36 +73,95 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Кнопка Исследовать с адаптивным меню */}
-          <div className="relative inline-block menu-container">
-            <div 
-              className="relative"
-              onMouseEnter={!isMobile ? () => setShowKulyaMenu(true) : undefined}
-              onMouseLeave={!isMobile ? () => setShowKulyaMenu(false) : undefined}
+          {/* Компактная кнопка с меню */}
+          <div className="relative inline-block">
+            {/* Основная кнопка */}
+            <button 
+              onClick={toggleMenu}
+              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:opacity-90 transition-all text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 min-h-[48px] flex items-center gap-2"
             >
-              <button 
-                onClick={isMobile ? handleMenuToggle : undefined}
-                className="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:opacity-90 transition-all text-base font-medium shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 min-h-[60px]"
-              >
-                Исследовать
-                {isMobile && (
-                  <span className="ml-2 text-sm">
-                    {showKulyaMenu ? '▲' : '▼'}
-                  </span>
-                )}
-              </button>
+              <span>Исследовать</span>
+              <span className="text-xs transition-transform duration-200">
+                {showKulyaMenu ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {/* Десктопное меню (выпадающее) */}
+            {!isMobile && showKulyaMenu && (
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm z-50 animate-fade-in">
+                <div className="p-2 space-y-1">
+                  <Link 
+                    href="/lounge"
+                    onClick={handleMenuSelect}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors group"
+                  >
+                    <div className="w-2 h-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex-shrink-0"></div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-sm">Куля 1.0</div>
+                    </div>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded group-hover:bg-gray-200">Классика</span>
+                  </Link>
+                  
+                  <div className="h-px bg-gray-200/50 mx-2"></div>
+                  
+                  <Link 
+                    href="/kulya2"
+                    onClick={handleMenuSelect}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors group"
+                  >
+                    <div className="w-2 h-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex-shrink-0"></div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-sm">Куля 2.0</div>
+                    </div>
+                    <span className="text-xs bg-gradient-to-r from-pink-500 to-purple-500 text-white px-1.5 py-0.5 rounded">NEW</span>
+                  </Link>
+                  
+                  <div className="h-px bg-gray-200/50 mx-2"></div>
+                  
+                  <Link 
+                    href="/logbook"
+                    onClick={handleMenuSelect}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors group"
+                  >
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0"></div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-sm">БортЖурнал</div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Мобильное меню (выезжающее снизу) */}
+          {isMobile && showKulyaMenu && (
+            <div className="fixed inset-0 z-50">
+              {/* Overlay */}
+              <div 
+                className="absolute inset-0 bg-black/50"
+                onClick={toggleMenu}
+              />
               
-              {/* Выпадающее меню */}
-              {(showKulyaMenu || isMobile) && (
-                <div className={`
-                  absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200/50 backdrop-blur-sm z-50
-                  ${isMobile ? 'animate-fade-in-up' : 'animate-fade-in'}
-                `}>
-                  <div className="p-3 space-y-1">
+              {/* Меню */}
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl animate-slide-up">
+                <div className="p-4">
+                  {/* Заголовок и кнопка закрытия */}
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Выберите раздел</h3>
+                    <button 
+                      onClick={toggleMenu}
+                      className="text-gray-400 hover:text-gray-600 transition-colors p-2"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Пункты меню */}
+                  <div className="space-y-2">
                     <Link 
                       href="/lounge"
-                      onClick={() => setShowKulyaMenu(false)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100"
+                      onClick={handleMenuSelect}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100 border border-gray-200/50"
                     >
                       <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex-shrink-0"></div>
                       <div className="flex-1 text-left">
@@ -119,12 +171,10 @@ export default function Home() {
                       <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">Классика</span>
                     </Link>
                     
-                    <div className="h-px bg-gray-200/50 mx-3"></div>
-                    
                     <Link 
                       href="/kulya2"
-                      onClick={() => setShowKulyaMenu(false)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100"
+                      onClick={handleMenuSelect}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100 border border-gray-200/50"
                     >
                       <div className="w-3 h-3 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex-shrink-0"></div>
                       <div className="flex-1 text-left">
@@ -134,12 +184,10 @@ export default function Home() {
                       <span className="text-xs bg-gradient-to-r from-pink-500 to-purple-500 text-white px-2 py-1 rounded">NEW</span>
                     </Link>
                     
-                    <div className="h-px bg-gray-200/50 mx-3"></div>
-                    
                     <Link 
                       href="/logbook"
-                      onClick={() => setShowKulyaMenu(false)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100"
+                      onClick={handleMenuSelect}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100 border border-gray-200/50"
                     >
                       <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
                       <div className="flex-1 text-left">
@@ -149,14 +197,7 @@ export default function Home() {
                     </Link>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Мобильная подсказка */}
-          {isMobile && !showKulyaMenu && (
-            <div className="mt-4 text-xs text-gray-500">
-              Нажмите для выбора раздела
+              </div>
             </div>
           )}
         </div>
@@ -267,16 +308,6 @@ export default function Home() {
         @keyframes fade-in {
           from {
             opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
             transform: translate(-50%, -5px);
           }
           to {
@@ -289,9 +320,6 @@ export default function Home() {
         }
         .animate-fade-in {
           animation: fade-in 0.2s ease-out;
-        }
-        .animate-fade-in-up {
-          animation: fade-in-up 0.2s ease-out;
         }
         .safe-area-inset {
           padding-top: env(safe-area-inset-top);
