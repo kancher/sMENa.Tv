@@ -19,43 +19,113 @@ type User = {
   username: string;
   role: string;
   emoji: string;
-  daily_tokens_used?: number;
 };
 
-type ChatMode = 'mistral' | 'creative';
+type ChatMode = 'auto' | 'turbo' | 'fast' | 'creative';
+type SystemStatus = {
+  turbo_api_available: boolean;
+  fast_api_available: boolean;
+  image_api_available: boolean;
+  server_available: boolean;
+  last_check: string;
+};
+
+type UsageStats = {
+  turbo_api: number;
+  fast_api: number;
+  fallback: number;
+};
 
 const API_BASE_URL = 'https://api.kancher.ru';
-const DAILY_LIMIT = 1000;
 
-export default function KulyaChatWithContext() {
+export default function KulyaSmartChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentMode, setCurrentMode] = useState<ChatMode>('mistral');
-  const [tokensUsed, setTokensUsed] = useState(0);
+  const [currentMode, setCurrentMode] = useState<ChatMode>('auto');
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [usageStats, setUsageStats] = useState<UsageStats>({ turbo_api: 0, fast_api: 0, fallback: 0 });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [authUsername, setAuthUsername] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 🔍 Проверяем аутентификацию при загрузке
+  // 🔍 Инициализация
   useEffect(() => {
+    loadSystemStatus();
+    loadLocalHistory();
+    
     const token = localStorage.getItem('kulya_token');
     if (token) {
       checkAuth(token);
-    } else {
-      setShowAuthModal(true);
     }
+    
+    // Периодическая проверка статуса
+    const interval = setInterval(loadSystemStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  // 📜 Автопрокрутка к новым сообщениям
+  // 📜 Автопрокрутка
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 🔐 Проверка токена
+  // 🔧 Загрузка статуса системы
+  const loadSystemStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/system/status`);
+      if (response.ok) {
+        const data = await response.json();
+        setSystemStatus(data.status);
+      }
+    } catch (error) {
+      setSystemStatus({
+        turbo_api_available: false,
+        fast_api_available: false,
+        image_api_available: false,
+        server_available: false,
+        last_check: new Date().toISOString()
+      });
+    }
+  };
+
+  // 💾 Локальная история из браузера
+  const loadLocalHistory = () => {
+    try {
+      const saved = localStorage.getItem('kulya_local_history');
+      if (saved) {
+        const history = JSON.parse(saved);
+        setMessages(history.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        })));
+      } else {
+        // Приветственное сообщение
+        setMessages([{
+          id: 'welcome',
+          text: 'Привет! Я Куля 💃\n\nГотова к общению! Выбери режим работы внизу и погнали! ✨',
+          isUser: false,
+          timestamp: new Date(),
+          mode: 'auto'
+        }]);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки локальной истории:', error);
+    }
+  };
+
+  // 💾 Сохранение в локальную историю
+  const saveToLocalHistory = (newMessages: Message[]) => {
+    try {
+      localStorage.setItem('kulya_local_history', JSON.stringify(newMessages.slice(-50))); // Последние 50 сообщений
+    } catch (error) {
+      console.error('Ошибка сохранения локальной истории:', error);
+    }
+  };
+
+  // 🔐 Проверка аутентификации
   const checkAuth = async (token: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -66,34 +136,12 @@ export default function KulyaChatWithContext() {
         const data = await response.json();
         setCurrentUser(data.user);
         setIsAuthenticated(true);
-        setShowAuthModal(false);
-        loadUserHistory(token);
         loadUserStats(token);
       } else {
         localStorage.removeItem('kulya_token');
-        setShowAuthModal(true);
       }
     } catch (error) {
       localStorage.removeItem('kulya_token');
-      setShowAuthModal(true);
-    }
-  };
-
-  // 📊 Загрузка статистики пользователя
-  const loadUserStats = async (token: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/user/stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setTokensUsed(data.stats.daily_tokens_used || 0);
-        }
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки статистики:', error);
     }
   };
 
@@ -116,9 +164,11 @@ export default function KulyaChatWithContext() {
         setCurrentUser(data.user);
         setIsAuthenticated(true);
         setShowAuthModal(false);
-        addWelcomeMessage(data.user);
-        loadUserHistory(data.token);
+        setAuthUsername('');
         loadUserStats(data.token);
+        
+        // Добавляем приветствие
+        addSystemMessage(`Рада тебя видеть, ${data.user.username} ${data.user.emoji}! Теперь у тебя есть доступ к полной истории диалогов! 💫`);
       } else {
         alert(data.error || 'Ошибка аутентификации');
       }
@@ -129,73 +179,25 @@ export default function KulyaChatWithContext() {
     }
   };
 
-  // 👋 Приветственное сообщение
-  const addWelcomeMessage = (user: User) => {
-    const welcomeMessage: Message = {
-      id: 'welcome',
-      text: `Привет! Я Куля 💃 Рада тебя видеть, ${user.username} ${user.emoji}!\n\nТеперь я помню контекст наших разговоров! Выбери режим внизу и давай общаться! ✨`,
-      isUser: false,
-      timestamp: new Date(),
-      mode: 'mistral',
-      user: user
-    };
-    setMessages([welcomeMessage]);
-  };
-
-  // 📚 Загрузка истории диалогов
-  const loadUserHistory = async (token: string) => {
+  // 📊 Загрузка статистики
+  const loadUserStats = async (token: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/dialogs/history?limit=10`, {
+      const response = await fetch(`${API_BASE_URL}/user/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.history.length > 0) {
-          const historyMessages: Message[] = data.history.reverse().map((dialog: any) => ({
-            id: `hist_${dialog.id}`,
-            text: dialog.user_message,
-            isUser: true,
-            timestamp: new Date(dialog.timestamp),
-            mode: dialog.mode
-          }));
-          
-          const responseMessages: Message[] = data.history.map((dialog: any) => ({
-            id: `resp_${dialog.id}`,
-            text: dialog.ai_response,
-            isUser: false,
-            timestamp: new Date(dialog.timestamp),
-            mode: dialog.mode,
-            apiUsed: dialog.api_used,
-            isImage: dialog.ai_response?.startsWith?.('data:image/')
-          }));
-          
-          // Чередуем сообщения пользователя и ответы
-          const allMessages: Message[] = [];
-          for (let i = 0; i < historyMessages.length; i++) {
-            allMessages.push(historyMessages[i]);
-            if (responseMessages[i]) {
-              allMessages.push(responseMessages[i]);
-            }
-          }
-          
-          setMessages(allMessages);
-        }
+        setUsageStats(data.stats);
       }
     } catch (error) {
-      console.error('Ошибка загрузки истории:', error);
+      console.error('Ошибка загрузки статистики:', error);
     }
   };
 
   // 📨 Отправка сообщения
   const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading || !currentUser) return;
-
-    const token = localStorage.getItem('kulya_token');
-    if (!token) {
-      setShowAuthModal(true);
-      return;
-    }
+    if (!inputText.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -203,19 +205,43 @@ export default function KulyaChatWithContext() {
       isUser: true,
       timestamp: new Date(),
       mode: currentMode,
-      user: currentUser
+      user: currentUser || undefined
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    saveToLocalHistory(newMessages);
     setInputText('');
     setIsLoading(true);
 
+    const token = localStorage.getItem('kulya_token');
+
     try {
+      // Если сервер недоступен - локальный ответ
+      if (!systemStatus?.server_available) {
+        setTimeout(() => {
+          const fallbackResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            text: getLocalResponse(inputText),
+            isUser: false,
+            timestamp: new Date(),
+            mode: currentMode,
+            apiUsed: 'fallback'
+          };
+          const updatedMessages = [...newMessages, fallbackResponse];
+          setMessages(updatedMessages);
+          saveToLocalHistory(updatedMessages);
+          setIsLoading(false);
+        }, 1000);
+        return;
+      }
+
+      // Запрос к серверу
       const response = await fetch(`${API_BASE_URL}/v2/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify({
           message: inputText,
@@ -230,7 +256,7 @@ export default function KulyaChatWithContext() {
       if (data.success) {
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: data.kulya_response || 'Ой, что-то пошло не так...',
+          text: data.message,
           isUser: false,
           timestamp: new Date(),
           mode: data.mode,
@@ -239,27 +265,52 @@ export default function KulyaChatWithContext() {
           user: data.user
         };
         
-        setMessages(prev => [...prev, aiMessage]);
-        setTokensUsed(prev => prev + (data.tokens_used || 0));
+        const updatedMessages = [...newMessages, aiMessage];
+        setMessages(updatedMessages);
+        saveToLocalHistory(updatedMessages);
+
+        // Обновляем статистику если авторизованы
+        if (token && data.api_used) {
+          setUsageStats(prev => ({
+            ...prev,
+            [data.api_used]: (prev[data.api_used as keyof UsageStats] || 0) + 1
+          }));
+        }
       } else {
         throw new Error(data.error || 'Unknown error');
       }
       
     } catch (error) {
       console.error('❌ Ошибка отправки:', error);
+      
+      // Локальный фолбэк
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: '⚠️ Сервер временно недоступен. Попробуйте позже.',
+        text: getLocalResponse(inputText),
         isUser: false,
-        isError: true,
         timestamp: new Date(),
-        mode: currentMode
+        mode: currentMode,
+        apiUsed: 'fallback'
       };
       
-      setMessages(prev => [...prev, errorMessage]);
+      const updatedMessages = [...newMessages, errorMessage];
+      setMessages(updatedMessages);
+      saveToLocalHistory(updatedMessages);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 💬 Локальные ответы
+  const getLocalResponse = (message: string): string => {
+    const responses = [
+      "Понимаю тебя! 💫 Сейчас работаю в локальном режиме.",
+      "Интересно! ✨ Расскажи подробнее!",
+      "Записываю твои мысли! 💃 Продолжаем?",
+      "Как здорово! 💖 Жду продолжения!",
+      "Поняла тебя! 💫 Что ещё расскажешь?"
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   // 💬 Системные сообщения
@@ -271,7 +322,9 @@ export default function KulyaChatWithContext() {
       timestamp: new Date(),
       mode: currentMode
     };
-    setMessages(prev => [...prev, systemMessage]);
+    const newMessages = [...messages, systemMessage];
+    setMessages(newMessages);
+    saveToLocalHistory(newMessages);
   };
 
   // ⌨️ Обработка клавиши Enter
@@ -287,162 +340,111 @@ export default function KulyaChatWithContext() {
     localStorage.removeItem('kulya_token');
     setIsAuthenticated(false);
     setCurrentUser(null);
-    setMessages([]);
-    setShowAuthModal(true);
+    setUsageStats({ turbo_api: 0, fast_api: 0, fallback: 0 });
+    addSystemMessage('Перешла в локальный режим. История сохраняется в браузере! 💫');
   };
 
   // 🧹 Очистка чата
   const clearChat = () => {
-    setMessages([
-      {
-        id: '1',
-        text: `Чат очищен! Но я всё ещё помню наш контекст, ${currentUser?.username} ${currentUser?.emoji}! 💫`,
-        isUser: false,
-        timestamp: new Date(),
-        mode: currentMode,
-        user: currentUser
-      }
-    ]);
+    const newMessages: Message[] = [{
+      id: 'cleared',
+      text: `Чат очищен! ${currentUser ? `Рада продолжать, ${currentUser.username} ${currentUser.emoji}!` : 'Готова к новому общению!'} 💫`,
+      isUser: false,
+      timestamp: new Date(),
+      mode: currentMode
+    }];
+    setMessages(newMessages);
+    saveToLocalHistory(newMessages);
   };
 
-  // ⛽ Прогресс-бар для токенов
-  const tokensPercentage = Math.min((tokensUsed / DAILY_LIMIT) * 100, 100);
-  const tokensRemaining = DAILY_LIMIT - tokensUsed;
-
-  // 🎯 Получение описания режима
-  const getModeDescription = () => {
-    switch (currentMode) {
-      case 'mistral': return 'Умный чат с памятью';
-      case 'creative': return 'Генерация изображений';
-      default: return 'Выбери режим';
+  // 🎯 Получение статуса системы
+  const getSystemStatus = () => {
+    if (!systemStatus) return { text: 'Проверяем...', color: 'bg-gray-400' };
+    
+    if (!systemStatus.server_available) {
+      return { text: 'ЛОКАЛЬНЫЙ', color: 'bg-red-500' };
     }
+    
+    if (systemStatus.turbo_api_available && systemStatus.fast_api_available) {
+      return { text: 'ВСЕ СИСТЕМЫ', color: 'bg-green-500' };
+    }
+    
+    if (systemStatus.fast_api_available) {
+      return { text: 'ОСНОВНЫЕ', color: 'bg-yellow-500' };
+    }
+    
+    return { text: 'БАЗОВЫЙ', color: 'bg-orange-500' };
   };
 
-  // 🚫 Модальное окно аутентификации
-  if (showAuthModal) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-xl border border-purple-100">
-          {/* 🎯 Заголовок */}
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-white text-2xl">💃</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Куля 4.0</h1>
-            <p className="text-gray-600">Теперь с контекстной памятью! ✨</p>
-          </div>
-          
-          {/* 📝 Форма входа */}
-          <div className="space-y-4">
-            <div>
-              <input
-                type="text"
-                value={authUsername}
-                onChange={(e) => setAuthUsername(e.target.value)}
-                placeholder="Как к вам обращаться?"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
-                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-              />
-            </div>
-            
-            {/* 🚀 Кнопка входа */}
-            <button
-              onClick={handleLogin}
-              disabled={!authUsername.trim() || authLoading}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-medium disabled:opacity-50 transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {authLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Входим...</span>
-                </div>
-              ) : (
-                'Войти в чат 💫'
-              )}
-            </button>
-            
-            {/* 💝 Красивое сообщение */}
-            <div className="text-center pt-4 border-t border-gray-100">
-              <p className="text-sm text-gray-500 italic leading-relaxed">
-                "Теперь я помню наши разговоры! Будьте вежливы — технологии живые!" 💖
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const status = getSystemStatus();
 
-  // 💬 Основной интерфейс чата
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex flex-col">
       {/* 🎪 Компактный хедер */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 p-3 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          {/* 👤 Информация о пользователе */}
-          <div className="flex items-center gap-2">
-            <Link href="/" className="p-1 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600 text-sm">
-              ←
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-md">
-                <span className="text-white text-xs">💃</span>
+        <div className="max-w-4xl mx-auto">
+          {/* Первая строка: статус и управление */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <Link href="/" className="p-1 hover:bg-gray-100 rounded-lg transition-colors no-underline text-gray-600">
+                ←
+              </Link>
+              
+              {/* 🔦 Сигнальная лампочка */}
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${status.color} animate-pulse`}></div>
+                <span className="text-sm font-medium text-gray-700">{status.text}</span>
               </div>
-              <div>
-                <div className="text-sm font-medium text-gray-900">
-                  {currentUser?.username} {currentUser?.emoji}
+              
+              {/* 👤 Информация о пользователе */}
+              {currentUser && (
+                <div className="text-sm text-gray-600">
+                  {currentUser.username} {currentUser.emoji}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {getModeDescription()}
-                </div>
-              </div>
+              )}
             </div>
-          </div>
-          
-          {/* 🎛️ Управление */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handleLogout}
-              className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              title="Выйти"
-            >
-              Выйти
-            </button>
             
-            <button
-              onClick={clearChat}
-              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Очистить чат"
-            >
-              🗑️
-            </button>
+            {/* 🎛️ Управление */}
+            <div className="flex items-center gap-2">
+              {systemStatus?.server_available && (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="px-3 py-1 text-sm bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                >
+                  {isAuthenticated ? 'Аккаунт' : 'Войти'}
+                </button>
+              )}
+              
+              {isAuthenticated && (
+                <button
+                  onClick={handleLogout}
+                  className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Выйти
+                </button>
+              )}
+              
+              <button
+                onClick={clearChat}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Очистить чат"
+              >
+                🗑️
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* ⛽ Счётчик токенов */}
-        <div className="max-w-4xl mx-auto mt-2">
-          <div className="flex items-center justify-between text-xs">
-            <div className="text-gray-600">
-              ⛽ Токены: {tokensUsed}/{DAILY_LIMIT}
-            </div>
-            <div className="text-gray-500">
-              Осталось: {tokensRemaining}
-            </div>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-            <div 
-              className={`h-1.5 rounded-full transition-all duration-500 ${
-                tokensPercentage < 70 ? 'bg-green-500' : 
-                tokensPercentage < 90 ? 'bg-yellow-500' : 'bg-red-500'
-              }`}
-              style={{ width: `${tokensPercentage}%` }}
-            ></div>
+          {/* 📊 Счётчики использования */}
+          <div className="flex items-center justify-between text-xs text-gray-600">
+            <div>🚀 Турбо-ответов: <span className="font-medium">{usageStats.turbo_api}</span></div>
+            <div>⚡ Быстрых ответов: <span className="font-medium">{usageStats.fast_api}</span></div>
+            <div>💫 Локальных ответов: <span className="font-medium">{usageStats.fallback}</span></div>
           </div>
         </div>
       </header>
 
       {/* 💭 Контейнер сообщений */}
-      <div className="flex-1 overflow-y-auto p-4 pb-20">
+      <div className="flex-1 overflow-y-auto p-4 pb-24">
         <div className="max-w-4xl mx-auto space-y-3">
           {messages.map((message) => (
             <div
@@ -452,7 +454,7 @@ export default function KulyaChatWithContext() {
               <div
                 className={`max-w-[85%] rounded-2xl p-3 relative ${
                   message.isUser
-                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
                     : message.isError
                     ? 'bg-red-50 border border-red-200 text-red-800'
                     : message.isImage
@@ -460,29 +462,28 @@ export default function KulyaChatWithContext() {
                     : 'bg-white border border-gray-200/50 text-gray-800 shadow-sm'
                 }`}
               >
-                {/* 🏷️ Индикатор режима для сообщений AI */}
+                {/* 🏷️ Индикатор режима */}
                 {!message.isUser && !message.isError && (
-                  <div className="absolute -top-1 -left-1 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-xs text-gray-500 shadow-sm flex items-center gap-1">
-                    {message.mode === 'mistral' && '💁‍♀️'}
-                    {message.mode === 'creative' && '💃🎨'} 
+                  <div className="absolute -top-1 -left-1 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-xs text-gray-500 shadow-sm">
+                    {message.mode === 'auto' && '🤖'}
+                    {message.mode === 'turbo' && '🚀'}
+                    {message.mode === 'fast' && '⚡'}
+                    {message.mode === 'creative' && '🎨'}
                   </div>
                 )}
                 
                 {message.isImage ? (
                   <div className="text-center">
                     <div className="text-xs mb-1 opacity-80">🎨 Сгенерировано изображение:</div>
-                    {message.text && typeof message.text === 'string' && message.text.startsWith('data:image/') ? (
+                    {message.text && message.text.startsWith('data:image/') ? (
                       <img 
                         src={message.text} 
                         alt="Сгенерированное изображение" 
                         className="max-w-full h-auto rounded-lg mx-auto max-h-48 shadow-lg"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
                       />
                     ) : (
                       <div className="bg-white/20 p-2 rounded-lg text-xs">
-                        {typeof message.text === 'string' ? message.text : 'Загружаю изображение...'}
+                        {message.text}
                       </div>
                     )}
                   </div>
@@ -494,7 +495,7 @@ export default function KulyaChatWithContext() {
                 
                 <div
                   className={`text-xs mt-1 ${
-                    message.isUser ? 'text-cyan-100' : 
+                    message.isUser ? 'text-blue-100' : 
                     message.isError ? 'text-red-400' : 
                     message.isImage ? 'text-white/70' : 'text-gray-400'
                   }`}
@@ -519,8 +520,10 @@ export default function KulyaChatWithContext() {
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <span className="text-xs text-gray-500">
-                    {currentMode === 'mistral' && '💁‍♀️ Думаю с контекстом...'}
-                    {currentMode === 'creative' && '💃🎨 Творим...'}
+                    {currentMode === 'auto' && '🤖 Выбираю лучший режим...'}
+                    {currentMode === 'turbo' && '🚀 Генерирую мощный ответ...'}
+                    {currentMode === 'fast' && '⚡ Быстро отвечаю...'}
+                    {currentMode === 'creative' && '🎨 Создаю изображение...'}
                   </span>
                 </div>
               </div>
@@ -531,38 +534,64 @@ export default function KulyaChatWithContext() {
         </div>
       </div>
 
-      {/* 🎚️ Переключатель режимов */}
-      <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 sticky bottom-0">
+      {/* 🎚️ Панель управления */}
+      <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 fixed bottom-0 left-0 right-0">
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-center gap-4 mb-2">
-            {/* 💁‍♀️ Режим 1: Mistral AI */}
+          {/* Переключатель режимов */}
+          <div className="flex justify-center gap-2 mb-3">
             <button
-              onClick={() => setCurrentMode('mistral')}
-              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
-                currentMode === 'mistral' 
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg scale-110' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:shadow-md'
+              onClick={() => setCurrentMode('auto')}
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
+                currentMode === 'auto' 
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300'
               }`}
-              title="Mistral AI - Умный чат с памятью"
+              title="Автоматический выбор лучшего режима"
             >
-              💁‍♀️
+              🤖 Автомат
             </button>
 
-            {/* 💃🎨 Режим 2: Генерация изображений */}
+            <button
+              onClick={() => setCurrentMode('turbo')}
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
+                currentMode === 'turbo' 
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'
+              }`}
+              disabled={!systemStatus?.turbo_api_available}
+              title="Мощные и качественные ответы"
+            >
+              🚀 Турбо-режим
+            </button>
+
+            <button
+              onClick={() => setCurrentMode('fast')}
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
+                currentMode === 'fast' 
+                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
+              }`}
+              disabled={!systemStatus?.fast_api_available}
+              title="Быстрые и стабильные ответы"
+            >
+              ⚡ Быстрый
+            </button>
+
             <button
               onClick={() => setCurrentMode('creative')}
-              className={`p-3 rounded-xl border-2 transition-all text-2xl ${
+              className={`px-3 py-2 rounded-lg border transition-all text-sm ${
                 currentMode === 'creative' 
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg scale-110' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300 hover:shadow-md'
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-lg' 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-pink-300'
               }`}
-              title="Творяшка - Генерация изображений"
+              disabled={!systemStatus?.image_api_available}
+              title="Генерация изображений"
             >
-              💃🎨
+              🎨 Творческий
             </button>
           </div>
 
-          {/* ⌨️ Поле ввода */}
+          {/* Поле ввода */}
           <div className="flex gap-2">
             <div className="flex-1 bg-gray-100 rounded-xl border border-gray-200/50 focus-within:border-purple-400 transition-colors">
               <textarea
@@ -570,8 +599,10 @@ export default function KulyaChatWithContext() {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  currentMode === 'mistral' ? "Спроси что угодно, я помню контекст... 💁‍♀️" :
-                  "Опиши что нарисовать... 💃🎨"
+                  currentMode === 'auto' ? "Спроси что угодно - я выберу лучший режим! 🤖" :
+                  currentMode === 'turbo' ? "Задавай сложные вопросы... 🚀" :
+                  currentMode === 'fast' ? "Быстро обсудим любую тему... ⚡" :
+                  "Опиши что хочешь увидеть... 🎨"
                 }
                 className="w-full bg-transparent border-none resize-none py-2 px-3 focus:outline-none text-gray-800 placeholder-gray-500 text-sm"
                 rows={1}
@@ -585,7 +616,9 @@ export default function KulyaChatWithContext() {
               onClick={handleSendMessage}
               disabled={!inputText.trim() || isLoading}
               className={`px-4 py-2 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 flex items-center justify-center ${
-                currentMode === 'mistral' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                currentMode === 'auto' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                currentMode === 'turbo' ? 'bg-gradient-to-r from-orange-500 to-red-500' :
+                currentMode === 'fast' ? 'bg-gradient-to-r from-green-500 to-blue-500' :
                 'bg-gradient-to-r from-pink-500 to-purple-500'
               }`}
             >
@@ -598,6 +631,48 @@ export default function KulyaChatWithContext() {
           </div>
         </div>
       </div>
+
+      {/* 🔐 Модальное окно аутентификации */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Вход в систему</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  value={authUsername}
+                  onChange={(e) => setAuthUsername(e.target.value)}
+                  placeholder="Введите имя пользователя"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={handleLogin}
+                  disabled={!authUsername.trim() || authLoading}
+                  className="flex-1 bg-purple-500 text-white py-2 rounded-lg font-medium disabled:opacity-50"
+                >
+                  {authLoading ? 'Вход...' : 'Войти'}
+                </button>
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+              
+              <div className="text-xs text-gray-500 text-center">
+                Примеры: Kancher, Creator1, User1
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
