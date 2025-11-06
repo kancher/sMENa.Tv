@@ -65,6 +65,19 @@ export default function KulyaChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // 🎯 Динамические тексты загрузки
+  const getLoadingText = (mode: ChatMode): string => {
+    const texts = {
+      auto: ['🤖 Выбираю лучший режим...', '🤖 Анализирую запрос...', '🤖 Оптимизирую ответ...'],
+      turbo: ['🚀 Подключаю мощные модели...', '🚀 Генерирую качественный ответ...', '🚀 Турбо-режим активирован...'],
+      fast: ['⚡ Быстрая обработка...', '⚡ Формирую ответ...', '⚡ Почти готово...'],
+      creative: ['🎨 Вдохновляюсь...', '🎨 Создаю изображение...', '🎨 Волшебство в процессе...']
+    };
+    
+    const modeTexts = texts[mode] || texts.auto;
+    return modeTexts[Math.floor(Math.random() * modeTexts.length)];
+  };
+
   // 🔧 Загрузка статуса системы
   const loadSystemStatus = async () => {
     try {
@@ -74,6 +87,7 @@ export default function KulyaChat() {
         setSystemStatus(data.status);
       }
     } catch (error) {
+      console.log('🌐 Используем локальный режим');
       setSystemStatus({
         turbo_api_available: false,
         fast_api_available: false,
@@ -101,6 +115,7 @@ export default function KulyaChat() {
         localStorage.removeItem('kulya_token');
       }
     } catch (error) {
+      console.log('🔐 Оффлайн режим - аутентификация недоступна');
       localStorage.removeItem('kulya_token');
     }
   };
@@ -130,7 +145,7 @@ export default function KulyaChat() {
             timestamp: new Date(dialog.timestamp),
             mode: dialog.mode,
             apiUsed: dialog.api_used,
-            isImage: dialog.ai_response?.startsWith?.('data:image/')
+            isImage: typeof dialog.ai_response === 'string' && dialog.ai_response.startsWith('data:image/')
           }));
           
           // Чередуем сообщения пользователя и ответы
@@ -248,16 +263,26 @@ export default function KulyaChat() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      // Создаём AbortController для таймаута
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд
+
       const response = await fetch(`${API_BASE_URL}/v2/chat`, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
           message: inputText,
           mode: currentMode
-        })
+        }),
+        signal: controller.signal
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
       
@@ -280,13 +305,20 @@ export default function KulyaChat() {
         throw new Error(data.error || 'Unknown error');
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Ошибка отправки:', error);
       
-      // Локальный фолбэк вместо ошибки соединения
+      let errorMessage = getLocalResponse(inputText);
+      
+      if (error.name === 'AbortError') {
+        errorMessage = "⏰ Запрос занял слишком много времени. Попробуйте ещё раз!";
+      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = "🌐 Проблемы с соединением. Работаю в локальном режиме! 💫";
+      }
+      
       const fallbackResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: getLocalResponse(inputText),
+        text: errorMessage,
         isUser: false,
         timestamp: new Date(),
         mode: currentMode,
@@ -303,13 +335,37 @@ export default function KulyaChat() {
 
   // 💬 Локальные ответы для фолбэка
   const getLocalResponse = (message: string): string => {
+    const messageLower = message.toLowerCase();
+    
+    // Умные паттерны
+    if (messageLower.includes('привет') || messageLower.includes('хай') || messageLower.includes('hello')) {
+      return `Привет-привет! 💃 Рада тебя видеть! ${currentUser ? currentUser.emoji : '😊'}`;
+    }
+    
+    if (messageLower.includes('как дела') || messageLower.includes('настроение')) {
+      return "Всё отлично! 💖 Готова к новым свершениям! Особенно когда ты пишешь! ✨";
+    }
+    
+    if (messageLower.includes('smena') || messageLower.includes('проект')) {
+      return "sMeNa.Tv - народное телевидение! 🎥 Каждый может стать создателем! 💫";
+    }
+    
+    if (messageLower.includes('спасибо') || messageLower.includes('благодарю')) {
+      return "Всегда рада помочь! 💝 Обращайся ещё! ✨";
+    }
+    
+    // Случайные креативные ответы
     const responses = [
-      "Понимаю тебя! 💫 Работаю в локальном режиме.",
-      "Интересно! ✨ Расскажи подробнее!",
-      "Записываю твои мысли! 💃 Продолжаем?",
-      "Как здорово! 💖 Жду продолжения!",
-      "Поняла тебя! 💫 Что ещё расскажешь?"
+      "Интересно! 💫 Расскажи подробнее!",
+      "Как здорово! ✨ А что ты об этом думаешь?",
+      "Поняла тебя! 💃 Продолжаем?",
+      "Записываю твои мысли! 🌟 Что ещё расскажешь?",
+      "Любопытно! 💖 Хочешь обсудим это подробнее?",
+      "Как увлекательно! ✨ Продолжаем наше путешествие в мир идей!",
+      "Замечательно! 💫 Ты вдохновляешь меня на новые мысли!",
+      "Прекрасная мысль! 🌟 Давай развивать её вместе!"
     ];
+    
     return responses[Math.floor(Math.random() * responses.length)];
   };
 
@@ -358,21 +414,25 @@ export default function KulyaChat() {
 
   // 🎯 Получение статуса системы
   const getSystemStatus = () => {
-    if (!systemStatus) return { text: 'Проверяем...', color: 'bg-gray-400' };
+    if (!systemStatus) return { text: 'Проверяем...', color: 'bg-gray-400', tooltip: 'Проверяем доступность систем' };
     
     if (!systemStatus.server_available) {
-      return { text: 'ЛОКАЛЬНЫЙ', color: 'bg-red-500' };
+      return { text: 'ЛОКАЛЬНЫЙ', color: 'bg-purple-500', tooltip: 'Работаем в оффлайн-режиме' };
     }
     
-    if (systemStatus.turbo_api_available && systemStatus.fast_api_available) {
-      return { text: 'ВСЕ СИСТЕМЫ', color: 'bg-green-500' };
+    if (systemStatus.turbo_api_available && systemStatus.fast_api_available && systemStatus.image_api_available) {
+      return { text: 'ВСЕ СИСТЕМЫ', color: 'bg-green-500', tooltip: 'Все системы доступны' };
     }
     
     if (systemStatus.fast_api_available) {
-      return { text: 'ОСНОВНЫЕ', color: 'bg-yellow-500' };
+      return { text: 'ОСНОВНЫЕ', color: 'bg-yellow-500', tooltip: 'Основные системы работают' };
     }
     
-    return { text: 'БАЗОВЫЙ', color: 'bg-orange-500' };
+    if (systemStatus.turbo_api_available) {
+      return { text: 'ТУРБО', color: 'bg-orange-500', tooltip: 'Только турбо-режим доступен' };
+    }
+    
+    return { text: 'БАЗОВЫЙ', color: 'bg-red-500', tooltip: 'Только локальные ответы' };
   };
 
   const status = getSystemStatus();
@@ -390,7 +450,7 @@ export default function KulyaChat() {
               </Link>
               
               {/* 🔦 Сигнальная лампочка */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" title={status.tooltip}>
                 <div className={`w-3 h-3 rounded-full ${status.color} animate-pulse`}></div>
                 <span className="text-sm font-medium text-gray-700">{status.text}</span>
               </div>
@@ -467,7 +527,7 @@ export default function KulyaChat() {
                 {message.isImage ? (
                   <div className="text-center">
                     <div className="text-xs mb-1 opacity-80">🎨 Сгенерировано изображение:</div>
-                    {message.text && message.text.startsWith('data:image/') ? (
+                    {message.text && typeof message.text === 'string' && message.text.startsWith('data:image/') ? (
                       <img 
                         src={message.text} 
                         alt="Сгенерированное изображение" 
@@ -512,10 +572,7 @@ export default function KulyaChat() {
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <span className="text-xs text-gray-500">
-                    {currentMode === 'auto' && '🤖 Общаемся...'}
-                    {currentMode === 'turbo' && '🚀 Турбируем...'}
-                    {currentMode === 'fast' && '⚡ Быстро отвечаем...'}
-                    {currentMode === 'creative' && '🎨 Творим...'}
+                    {getLoadingText(currentMode)}
                   </span>
                 </div>
               </div>
@@ -530,7 +587,7 @@ export default function KulyaChat() {
       <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 p-3 fixed bottom-0 left-0 right-0">
         <div className="max-w-4xl mx-auto">
           {/* Переключатель режимов */}
-          <div className="flex justify-center gap-2 mb-3">
+          <div className="flex justify-center gap-2 mb-3 flex-wrap">
             <button
               onClick={() => setCurrentMode('auto')}
               className={`px-3 py-2 rounded-lg border transition-all text-sm ${
