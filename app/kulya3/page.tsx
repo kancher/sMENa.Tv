@@ -21,13 +21,12 @@ type User = {
   emoji: string;
 };
 
-// ОБНОВЛЯЕМ ТИП ДЛЯ 5 РЕЖИМОВ
 type ChatMode = 'auto' | 'turbo' | 'gigachat' | 'fast' | 'creative';
 type SystemStatus = {
   turbo_api_available: boolean;
   fast_api_available: boolean;
   image_api_available: boolean;
-  gigachat_available: boolean;  // НОВОЕ ПОЛЕ
+  gigachat_available: boolean;
   server_available: boolean;
   last_check: string;
 };
@@ -67,12 +66,12 @@ export default function Kulya3Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 🎯 Динамические тексты загрузки (ОБНОВЛЯЕМ ДЛЯ GIGACHAT)
+  // 🎯 Динамические тексты загрузки
   const getLoadingText = (mode: ChatMode): string => {
     const texts = {
       auto: ['🤖 Выбираю лучший режим...', '🤖 Анализирую запрос...', '🤖 Оптимизирую ответ...'],
       turbo: ['🚀 Подключаю мощные модели...', '🚀 Генерирую качественный ответ...', '🚀 Турбо-режим активирован...'],
-      gigachat: ['🧠 Запускаю GigaChat...', '🧠 Обрабатываю запрос...', '🧠 Формирую умный ответ...'], // НОВОЕ
+      gigachat: ['🧠 Запускаю ULTRA режим...', '🧠 Обрабатываю запрос...', '🧠 Формирую умный ответ...'], // ОБНОВЛЕНО
       fast: ['⚡ Быстрая обработка...', '⚡ Формирую ответ...', '⚡ Почти готово...'],
       creative: ['🎨 Вдохновляюсь...', '🎨 Создаю изображение...', '🎨 Волшебство в процессе...']
     };
@@ -95,7 +94,7 @@ export default function Kulya3Chat() {
         turbo_api_available: false,
         fast_api_available: false,
         image_api_available: false,
-        gigachat_available: false, // НОВОЕ
+        gigachat_available: false,
         server_available: false,
         last_check: new Date().toISOString()
       });
@@ -127,7 +126,7 @@ export default function Kulya3Chat() {
   // 📚 Загрузка истории пользователя
   const loadUserHistory = async (token: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/dialogs/history?limit=10`, {
+      const response = await fetch(`${API_BASE_URL}/dialogs/history?limit=20`, { // Увеличили лимит
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -183,7 +182,7 @@ export default function Kulya3Chat() {
       } else {
         setMessages([{
           id: 'welcome',
-          text: 'Привет! Я Куля 3.0 💃\n\nТеперь с поддержкой GigaChat! 🧠\n\nВыбери режим работы и погнали! ✨',
+          text: 'Привет! Я Куля 3.0 💃\n\nULTRA версия с расширенными возможностями! 🧠\n\nВыбери режим работы и погнали! ✨',
           isUser: false,
           timestamp: new Date(),
           mode: 'auto'
@@ -197,7 +196,7 @@ export default function Kulya3Chat() {
   // 💾 Сохранение в локальную историю
   const saveToLocalHistory = (newMessages: Message[]) => {
     try {
-      localStorage.setItem('kulya3_local_history', JSON.stringify(newMessages.slice(-50)));
+      localStorage.setItem('kulya3_local_history', JSON.stringify(newMessages.slice(-100))); // Увеличили лимит
     } catch (error) {
       console.error('Ошибка сохранения локальной истории:', error);
     }
@@ -240,6 +239,14 @@ export default function Kulya3Chat() {
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
 
+    // Обработка специальных команд
+    if (inputText.toLowerCase().includes('история чата') || 
+        inputText.toLowerCase().includes('вышли всю историю') ||
+        inputText.toLowerCase().includes('покажи историю')) {
+      handleExportHistory();
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputText,
@@ -258,7 +265,6 @@ export default function Kulya3Chat() {
     const token = localStorage.getItem('kulya_token');
 
     try {
-      // Запрос к серверу (работает и без авторизации!)
       const headers: any = {
         'Content-Type': 'application/json'
       };
@@ -267,9 +273,8 @@ export default function Kulya3Chat() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Создаём AbortController для таймаута
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch(`${API_BASE_URL}/v2/chat`, {
         method: 'POST',
@@ -335,6 +340,41 @@ export default function Kulya3Chat() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 📤 Экспорт истории чата
+  const handleExportHistory = () => {
+    const chatHistory = messages.map(msg => ({
+      Время: msg.timestamp.toLocaleString('ru-RU'),
+      Отправитель: msg.isUser ? 'Вы' : 'Куля',
+      Режим: msg.mode || 'auto',
+      Сообщение: msg.text,
+      API: msg.apiUsed || 'fallback'
+    }));
+
+    const historyText = chatHistory.map(entry => 
+      `[${entry.Время}] ${entry.Отправитель} (${entry.Режим}): ${entry.Сообщение}`
+    ).join('\n\n');
+
+    const fullHistory = `💫 История чата с КУлей 3.0\n` +
+      `Пользователь: ${currentUser?.username || 'Гость'}\n` +
+      `Дата экспорта: ${new Date().toLocaleString('ru-RU')}\n` +
+      `Всего сообщений: ${messages.length}\n\n` +
+      historyText;
+
+    // Создаем и скачиваем файл
+    const blob = new Blob([fullHistory], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kulya3-history-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // Добавляем системное сообщение
+    addSystemMessage(`📋 История чата экспортирована! Файл скачан автоматически. Всего сообщений: ${messages.length} ✨`);
   };
 
   // 💬 Локальные ответы для фолбэка
@@ -416,7 +456,7 @@ export default function Kulya3Chat() {
     saveToLocalHistory(newMessages);
   };
 
-  // 🎯 Получение статуса системы (ОБНОВЛЯЕМ ДЛЯ 5 СИСТЕМ)
+  // 🎯 Получение статуса системы
   const getSystemStatus = () => {
     if (!systemStatus) return { text: 'Проверяем...', color: 'bg-gray-400', tooltip: 'Проверяем доступность систем' };
     
@@ -431,7 +471,7 @@ export default function Kulya3Chat() {
     }
     
     if (systemStatus.turbo_api_available && systemStatus.gigachat_available) {
-      return { text: 'ПРЕМИУМ', color: 'bg-blue-500', tooltip: 'Turbo + GigaChat доступны' };
+      return { text: 'ПРЕМИУМ', color: 'bg-blue-500', tooltip: 'Turbo + ULTRA доступны' }; // ОБНОВЛЕНО
     }
     
     if (systemStatus.fast_api_available) {
@@ -443,7 +483,7 @@ export default function Kulya3Chat() {
     }
     
     if (systemStatus.gigachat_available) {
-      return { text: 'GIGACHAT', color: 'bg-indigo-500', tooltip: 'Только GigaChat доступен' };
+      return { text: 'ULTRA', color: 'bg-indigo-500', tooltip: 'Только ULTRA режим доступен' }; // ОБНОВЛЕНО
     }
     
     return { text: 'БАЗОВЫЙ', color: 'bg-red-500', tooltip: 'Только локальные ответы' };
@@ -471,7 +511,7 @@ export default function Kulya3Chat() {
               
               {/* Бейдж версии */}
               <div className="text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white px-2 py-0.5 rounded-full">
-                v3.0
+                v3.0 ULTRA
               </div>
             </div>
             
@@ -484,6 +524,14 @@ export default function Kulya3Chat() {
             
             {/* 🎛️ Управление */}
             <div className="flex items-center gap-1">
+              <button
+                onClick={handleExportHistory}
+                className="px-2 py-1 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                title="Экспорт истории"
+              >
+                📋
+              </button>
+
               {systemStatus?.server_available && (
                 <button
                   onClick={() => setShowAuthModal(true)}
@@ -545,7 +593,7 @@ export default function Kulya3Chat() {
               </div>
             </button>
 
-            {/* НОВАЯ КНОПКА GIGACHAT */}
+            {/* КНОПКА ULTRA (бывшая GigaChat) */}
             <button
               onClick={() => setCurrentMode('gigachat')}
               className={`flex-1 px-2 py-2 rounded-lg border transition-all text-xs ${
@@ -554,11 +602,11 @@ export default function Kulya3Chat() {
                   : 'bg-white border-gray-200 text-gray-600 hover:border-indigo-300'
               }`}
               disabled={!systemStatus?.gigachat_available}
-              title="Умные ответы от GigaChat"
+              title="ULTRA режим - максимальная мощность"
             >
               <div className="flex flex-col items-center gap-0.5">
                 <span>🧠</span>
-                <span className="text-[10px]">GigaChat</span>
+                <span className="text-[10px]">ULTRA</span> {/* ОБНОВЛЕНО */}
               </div>
             </button>
 
@@ -616,12 +664,12 @@ export default function Kulya3Chat() {
                     : 'bg-white border border-gray-200/50 text-gray-800 shadow-sm'
                 }`}
               >
-                {/* 🏷️ Индикатор режима (ОБНОВЛЯЕМ ДЛЯ GIGACHAT) */}
+                {/* 🏷️ Индикатор режима */}
                 {!message.isUser && !message.isError && (
                   <div className="absolute -top-1 -left-1 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-xs text-gray-500 shadow-sm">
                     {message.mode === 'auto' && '🤖'}
                     {message.mode === 'turbo' && '🚀'}
-                    {message.mode === 'gigachat' && '🧠'} {/* НОВЫЙ */}
+                    {message.mode === 'gigachat' && '🧠'}
                     {message.mode === 'fast' && '⚡'}
                     {message.mode === 'creative' && '🎨'}
                   </div>
@@ -686,7 +734,7 @@ export default function Kulya3Chat() {
         </div>
       </div>
 
-      {/* 🎚️ Панель ввода (ОБНОВЛЯЕМ ПЛЕЙСХОЛДЕРЫ) */}
+      {/* 🎚️ Панель ввода */}
       <div className="bg-white/90 backdrop-blur-lg border-t border-gray-200/50 p-3 fixed bottom-0 left-0 right-0 safe-area-inset-bottom">
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-2">
@@ -698,7 +746,7 @@ export default function Kulya3Chat() {
                 placeholder={
                   currentMode === 'auto' ? "Спроси что угодно... 🤖" :
                   currentMode === 'turbo' ? "Задавай сложные вопросы... 🚀" :
-                  currentMode === 'gigachat' ? "Обсудим умные темы... 🧠" : // НОВЫЙ
+                  currentMode === 'gigachat' ? "Обсудим умные темы... 🧠" :
                   currentMode === 'fast' ? "Быстро обсудим любую тему... ⚡" :
                   "Опиши что хочешь увидеть... 🎨"
                 }
@@ -716,7 +764,7 @@ export default function Kulya3Chat() {
               className={`px-4 py-3 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg active:scale-95 flex items-center justify-center min-w-[44px] ${
                 currentMode === 'auto' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
                 currentMode === 'turbo' ? 'bg-gradient-to-r from-orange-500 to-red-500' :
-                currentMode === 'gigachat' ? 'bg-gradient-to-r from-indigo-500 to-purple-500' : // НОВЫЙ
+                currentMode === 'gigachat' ? 'bg-gradient-to-r from-indigo-500 to-purple-500' :
                 currentMode === 'fast' ? 'bg-gradient-to-r from-green-500 to-blue-500' :
                 'bg-gradient-to-r from-pink-500 to-purple-500'
               }`}
