@@ -115,6 +115,20 @@ export default function Home() {
                     </div>
                     <span className="text-xs bg-gradient-to-r from-pink-500 to-purple-500 text-white px-1.5 py-0.5 rounded">NEW</span>
                   </Link>
+
+                  <div className="h-px bg-gray-200/50 mx-2"></div>
+
+                  <Link 
+                    href="/kulya3"
+                    onClick={handleMenuSelect}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors group"
+                  >
+                    <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex-shrink-0"></div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-sm">Куля 3.0</div>
+                    </div>
+                    <span className="text-xs bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-1.5 py-0.5 rounded">ULTRA</span>
+                  </Link>
                   
                   <div className="h-px bg-gray-200/50 mx-2"></div>
                   
@@ -182,6 +196,19 @@ export default function Home() {
                         <div className="text-xs text-gray-400">Умный AI-помощник</div>
                       </div>
                       <span className="text-xs bg-gradient-to-r from-pink-500 to-purple-500 text-white px-2 py-1 rounded">NEW</span>
+                    </Link>
+
+                    <Link 
+                      href="/kulya3"
+                      onClick={handleMenuSelect}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100 border border-gray-200/50"
+                    >
+                      <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex-shrink-0"></div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">Куля 3.0</div>
+                        <div className="text-xs text-gray-400">GigaChat + все модели</div>
+                      </div>
+                      <span className="text-xs bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-2 py-1 rounded">ULTRA</span>
                     </Link>
                     
                     <Link 
