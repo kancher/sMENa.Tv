@@ -10,7 +10,7 @@ export default function StreamPage() {
   const [streamError, setStreamError] = useState('');
 
   // Поток с сервера
-  const streamUrl = 'http://194.87.57.198/stream/stream.m3u8';
+  const streamUrl = 'https://live.kancher.ru/stream/stream.m3u8';
 
   // Проверка доступности стрима
   useEffect(() => {
