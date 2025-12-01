@@ -1,35 +1,31 @@
-// app/stream/page.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Hls from 'hls.js';
 
 export default function StreamPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLive, setIsLive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [hls, setHls] = useState<any>(null);
 
-  // Используем НАПРЯМУЮ ваш домен с HTTPS
-  const streamUrl = 'https://live.kancher.ru/hls/stream.m3u8';
+  // Ваш Worker URL - добавляем путь к HLS
+  const streamUrl = 'https://video-proxy.smenatv.workers.dev/hls/stream.m3u8';
 
   useEffect(() => {
     const checkStream = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(streamUrl, { method: 'HEAD' });
+        const response = await fetch(streamUrl);
         setIsLive(response.ok);
-        setError('');
-      } catch (err) {
+      } catch {
         setIsLive(false);
-        setError('Стрим офлайн. Запустите OBS.');
       } finally {
         setIsLoading(false);
       }
     };
 
     checkStream();
-    const interval = setInterval(checkStream, 30000); // Проверка каждые 30 сек
+    const interval = setInterval(checkStream, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -37,47 +33,39 @@ export default function StreamPage() {
     const video = videoRef.current;
     if (!video) return;
 
-    if (Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 90
-      });
-      
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(e => console.log('Автовоспроизведение заблокировано'));
-      });
-      
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.log('Network error, trying to recover');
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.log('Media error, recovering');
-              hls.recoverMediaError();
-              break;
-            default:
-              hls.destroy();
-              break;
-          }
+    // Для браузеров с нативной поддержкой HLS (Safari)
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = streamUrl;
+      video.play().catch(e => console.log('Автовоспроизведение:', e.message));
+    } 
+    // Для других браузеров используем hls.js
+    else if (typeof window !== 'undefined') {
+      import('hls.js').then((Hls) => {
+        if (Hls.default.isSupported()) {
+          const hlsInstance = new Hls.default({
+            enableWorker: true,
+            lowLatencyMode: true,
+            backBufferLength: 90
+          });
+          
+          hlsInstance.loadSource(streamUrl);
+          hlsInstance.attachMedia(video);
+          
+          hlsInstance.on(Hls.default.Events.MANIFEST_PARSED, () => {
+            video.play().catch(e => console.log('Автовоспроизведение:', e.message));
+          });
+          
+          setHls(hlsInstance);
         }
       });
-      
-      return () => {
-        hls.destroy();
-      };
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Для Safari
-      video.src = streamUrl;
-      video.play().catch(e => console.log('Автовоспроизведение заблокировано'));
     }
-  }, [streamUrl]);
+
+    return () => {
+      if (hls) {
+        hls.destroy();
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -86,16 +74,15 @@ export default function StreamPage() {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg"></div>
             <div>
-              <h1 className="text-lg font-medium">sMeNa.Tv LIVE</h1>
+              <h1 className="text-lg font-medium">sMeNa.Tv LIVE через CloudFlare Worker</h1>
               <div className="flex items-center gap-2 text-sm">
                 <div className={`w-2 h-2 rounded-full ${
-                  isLoading ? 'bg-yellow-500 animate-pulse' : 
+                  isLoading ? 'bg-yellow-500' : 
                   isLive ? 'bg-red-500 animate-pulse' : 'bg-gray-500'
                 }`}></div>
                 <span>
                   {isLoading ? 'Проверка...' : 
-                   isLive ? 'В ЭФИРЕ' : 
-                   error ? error : 'ОФФЛАЙН'}
+                   isLive ? 'В ЭФИРЕ (через Worker)' : 'ОФФЛАЙН'}
                 </span>
               </div>
             </div>
@@ -104,16 +91,7 @@ export default function StreamPage() {
       </header>
 
       <main className="max-w-7xl mx-auto p-4">
-        {error && (
-          <div className="mb-4 p-4 bg-red-900/30 border border-red-700 rounded-lg">
-            <p className="text-red-300">{error}</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Настройки OBS: Сервер: <code>rtmp://194.87.57.198/live</code>
-            </p>
-          </div>
-        )}
-        
-        <div className="bg-black rounded-xl overflow-hidden">
+        <div className="bg-black rounded-xl overflow-hidden mb-6">
           <div className="relative aspect-video bg-gray-900">
             <video
               ref={videoRef}
@@ -122,40 +100,76 @@ export default function StreamPage() {
               muted
               playsInline
               className="w-full h-full"
-              poster="/placeholder.jpg"
-            />
+            >
+              Ваш браузер не поддерживает видео поток.
+            </video>
           </div>
         </div>
-        
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-900/50 rounded-lg">
-            <h3 className="font-medium mb-2">📡 Статус сервера</h3>
-            <p className="text-sm text-gray-300">
-              {isLive ? 'Сервер онлайн, принимает поток' : 'Ожидание потока от OBS'}
-            </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 bg-gray-900/50 rounded-xl">
+            <h3 className="text-xl font-semibold mb-4">📡 Статус системы</h3>
+            <ul className="space-y-3">
+              <li className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${isLive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span>Worker: video-proxy.smenatv.workers.dev</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span>VPS: 194.87.57.198:8080</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span>Frontend: CloudFlare Pages</span>
+              </li>
+            </ul>
           </div>
-          
-          <div className="p-4 bg-gray-900/50 rounded-lg">
-            <h3 className="font-medium mb-2">⚙️ Настройки OBS</h3>
-            <code className="text-sm bg-black p-2 rounded block">
-              Сервер: rtmp://194.87.57.198/live<br/>
-              Ключ: test123
-            </code>
+
+          <div className="p-6 bg-gray-900/50 rounded-xl">
+            <h3 className="text-xl font-semibold mb-4">🔗 Тестовые ссылки</h3>
+            <div className="space-y-2">
+              <a 
+                href="https://video-proxy.smenatv.workers.dev/hls/stream.m3u8" 
+                target="_blank"
+                className="block p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+              >
+                <div className="font-medium">HLS через Worker</div>
+                <div className="text-sm text-gray-400 truncate">
+                  https://video-proxy.smenatv.workers.dev/hls/stream.m3u8
+                </div>
+              </a>
+              <a 
+                href="http://194.87.57.198:8080/hls/stream.m3u8" 
+                target="_blank"
+                className="block p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+              >
+                <div className="font-medium">Прямой HLS (без Worker)</div>
+                <div className="text-sm text-gray-400 truncate">
+                  http://194.87.57.198:8080/hls/stream.m3u8
+                </div>
+              </a>
+              <a 
+                href="http://194.87.57.198:8080/stat" 
+                target="_blank"
+                className="block p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+              >
+                <div className="font-medium">Статистика RTMP</div>
+                <div className="text-sm text-gray-400">http://194.87.57.198:8080/stat</div>
+              </a>
+            </div>
           </div>
-          
-          <div className="p-4 bg-gray-900/50 rounded-lg">
-            <h3 className="font-medium mb-2">🔗 Прямые ссылки</h3>
-            <div className="space-y-1 text-sm">
-              <a href="https://live.kancher.ru/hls/stream.m3u8" 
-                 target="_blank" 
-                 className="text-cyan-400 hover:text-cyan-300 block">
-                HLS Поток
-              </a>
-              <a href="http://194.87.57.198:8080/stat" 
-                 target="_blank" 
-                 className="text-cyan-400 hover:text-cyan-300 block">
-                Статистика RTMP
-              </a>
+        </div>
+
+        <div className="mt-6 p-6 bg-blue-900/20 border border-blue-700 rounded-xl">
+          <h3 className="text-lg font-semibold mb-3">⚙️ Настройки OBS</h3>
+          <div className="bg-black p-4 rounded-lg font-mono text-sm">
+            <div className="mb-2">
+              <span className="text-gray-400">Сервер:</span> 
+              <span className="text-green-400 ml-2">rtmp://194.87.57.198/live</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Ключ потока:</span> 
+              <span className="text-yellow-400 ml-2">test123</span>
             </div>
           </div>
         </div>
