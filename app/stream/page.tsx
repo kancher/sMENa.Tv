@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Hls from 'hls.js';
 
 export default function StreamPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLive, setIsLive] = useState(false);
-  const [streamError, setStreamError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [viewerCount, setViewerCount] = useState(0);
+  const [streamError, setStreamError] = useState('');
 
-  // HLS поток с нашего сервера
+  // Поток с сервера
   const streamUrl = 'http://194.87.57.198/stream/stream.m3u8';
 
   // Проверка доступности стрима
@@ -39,7 +39,6 @@ export default function StreamPage() {
 
     checkStream();
     const interval = setInterval(checkStream, 10000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -48,37 +47,34 @@ export default function StreamPage() {
     if (videoRef.current && isLive) {
       const video = videoRef.current;
       
-      // Динамически загружаем HLS.js
-      import('hls.js').then((Hls) => {
-        if (Hls.default.isSupported()) {
-          const hls = new Hls.default({
-            enableWorker: false,
-            lowLatencyMode: true,
-            backBufferLength: 90
-          });
-          
-          hls.loadSource(streamUrl);
-          hls.attachMedia(video);
-          
-          hls.on(Hls.default.Events.MANIFEST_PARSED, () => {
-            video.play().catch(console.error);
-          });
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: false,
+          lowLatencyMode: true,
+          backBufferLength: 90
+        });
+        
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(console.error);
+        });
 
-          hls.on(Hls.default.Events.ERROR, (event, data) => {
-            console.error('HLS error:', data);
-            if (data.fatal) {
-              setIsLive(false);
-              setStreamError('Ошибка воспроизведения потока');
-            }
-          });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          // Для Safari
-          video.src = streamUrl;
-          video.addEventListener('loadedmetadata', () => {
-            video.play().catch(console.error);
-          });
-        }
-      });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          console.error('HLS error:', data);
+          if (data.fatal) {
+            setIsLive(false);
+            setStreamError('Ошибка воспроизведения потока');
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Для Safari
+        video.src = streamUrl;
+        video.addEventListener('loadedmetadata', () => {
+          video.play().catch(console.error);
+        });
+      }
     }
   }, [isLive]);
 
@@ -113,7 +109,7 @@ export default function StreamPage() {
           </div>
           
           <div className="text-sm text-gray-400">
-            Зрителей: <span className="text-white">{viewerCount}</span>
+            Сервер: 194.87.57.198
           </div>
         </div>
       </header>
@@ -131,7 +127,6 @@ export default function StreamPage() {
                 muted
                 playsInline
                 className="w-full h-full object-contain"
-                poster="/images/stream-poster.jpg"
               >
                 Ваш браузер не поддерживает видео поток.
               </video>
@@ -158,7 +153,6 @@ export default function StreamPage() {
           {/* Stream Info */}
           <div className="p-6 bg-gray-900/50">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Stream Status */}
               <div className="bg-gray-800/50 rounded-lg p-4">
                 <h3 className="font-medium mb-2">Статус трансляции</h3>
                 <div className="flex items-center gap-2">
@@ -173,17 +167,16 @@ export default function StreamPage() {
                 </div>
               </div>
 
-              {/* Stream Quality */}
               <div className="bg-gray-800/50 rounded-lg p-4">
                 <h3 className="font-medium mb-2">Качество</h3>
                 <div className="text-cyan-400">Адаптивное HLS</div>
               </div>
 
-              {/* Connection Info */}
               <div className="bg-gray-800/50 rounded-lg p-4">
                 <h3 className="font-medium mb-2">Подключение</h3>
                 <div className="text-sm text-gray-300">
-                  Сервер: 194.87.57.198
+                  <div>RTMP: rtmp://194.87.57.198:1935/live</div>
+                  <div>HLS: http://194.87.57.198/stream/stream.m3u8</div>
                 </div>
               </div>
             </div>
@@ -192,17 +185,17 @@ export default function StreamPage() {
 
         {/* Instructions */}
         <div className="mt-6 bg-gray-900 rounded-xl p-6">
-          <h3 className="text-lg font-medium mb-4">📡 Информация для стримера</h3>
+          <h3 className="text-lg font-medium mb-4">📡 Инструкция для стримера</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="bg-gray-800/50 rounded-lg p-4">
               <h4 className="font-medium mb-2">OBS Настройки</h4>
-              <p>Сервер: <code className="bg-gray-700 px-1 rounded">rtmp://194.87.57.198:1935/live</code></p>
-              <p>Ключ потока: <code className="bg-gray-700 px-1 rounded">stream</code></p>
+              <p><strong>Сервер:</strong> <code className="bg-gray-700 px-1 rounded">rtmp://194.87.57.198:1935/live</code></p>
+              <p><strong>Ключ потока:</strong> <code className="bg-gray-700 px-1 rounded">stream</code></p>
             </div>
             <div className="bg-gray-800/50 rounded-lg p-4">
               <h4 className="font-medium mb-2">Техническая информация</h4>
-              <p>HLS поток: <code className="bg-gray-700 px-1 rounded">/stream/stream.m3u8</code></p>
-              <p>Статистика: <code className="bg-gray-700 px-1 rounded">/stat</code></p>
+              <p><strong>HLS поток:</strong> <code className="bg-gray-700 px-1 rounded">/stream/stream.m3u8</code></p>
+              <p><strong>Статистика:</strong> <code className="bg-gray-700 px-1 rounded">/stat</code></p>
             </div>
           </div>
         </div>
