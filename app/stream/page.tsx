@@ -7,14 +7,14 @@ export default function StreamPage() {
   const [isLive, setIsLive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Поток с сервера трансляций
-  const streamUrl = 'https://live.kancher.ru/hls/stream.m3u8';
+  // Используем домен live.kancher.ru
+  const streamUrl = 'http://live.kancher.ru/hls/stream.m3u8';
 
   useEffect(() => {
     const checkStream = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(streamUrl, { method: 'HEAD' });
+        const response = await fetch(streamUrl);
         setIsLive(response.ok);
       } catch {
         setIsLive(false);
@@ -29,9 +29,9 @@ export default function StreamPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
-      <header className="bg-black/80 border-b border-gray-800 p-4 sticky top-0">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+    <div className="min-h-screen bg-black text-white">
+      <header className="bg-black/80 border-b border-gray-800 p-4">
+        <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg"></div>
             <div>
@@ -51,19 +51,17 @@ export default function StreamPage() {
       <main className="max-w-7xl mx-auto p-4">
         <div className="bg-black rounded-xl overflow-hidden">
           <div className="relative aspect-video bg-gray-900">
-            {isLive && (
-              <video
-                ref={videoRef}
-                controls
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full"
-              >
-                <source src={streamUrl} type="application/vnd.apple.mpegurl" />
-                Ваш браузер не поддерживает видео поток.
-              </video>
-            )}
+            <video
+              ref={videoRef}
+              controls
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full"
+            >
+              <source src={streamUrl} type="application/vnd.apple.mpegurl" />
+              Ваш браузер не поддерживает видео поток.
+            </video>
           </div>
         </div>
       </main>
