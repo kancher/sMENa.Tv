@@ -51,7 +51,7 @@ export default function Logbook() {
                 КУЛЯ 3.0 ULTRA - НОВЫЙ УРОВЕНЬ!
               </h2>
               <time className="text-gray-500 text-sm">
-                1 декабря 2025 • 03:16
+                1 декабря 2025 • 03:24
               </time>
             </div>
             
