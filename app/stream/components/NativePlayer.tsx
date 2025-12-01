@@ -1,4 +1,3 @@
-// smena-tv/app/stream/components/NativePlayer.tsx
 'use client';
 
 import { useEffect, useRef } from 'react';
